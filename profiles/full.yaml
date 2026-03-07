@@ -1,0 +1,64 @@
+name: full
+description: Complete development environment with all tools and utilities
+extends: minimal
+
+packages:
+  multiplexer:
+    - zellij
+  cli_modern:
+    - bat
+    - eza
+    - dust
+    - bottom
+    - procs
+  utilities:
+    - jq
+    - httpie
+    - doggo
+    - gping
+    - rsync
+    - yazi
+    - ouch
+    - asciinema
+    - glow
+    - fastfetch
+  security:
+    - pass
+  languages:
+    - python3
+    - rustup
+  git:
+    - gh
+  devops:
+    - docker
+    - kubectl
+
+dotfiles:
+  source: profiles/full/
+  links:
+    - src: shell/.config/nushell/
+      dest: ~/.config/nushell/
+    - src: editors/.config/nvim/
+      dest: ~/.config/nvim/
+    - src: multiplexer/.config/zellij/
+      dest: ~/.config/zellij/
+    - src: cli/.config/bat/
+      dest: ~/.config/bat/
+    - src: cli/.config/bottom/
+      dest: ~/.config/bottom/
+    - src: cli/.config/glow/
+      dest: ~/.config/glow/
+    - src: git/.gitconfig
+      dest: ~/.gitconfig
+    - src: dev/.config/mise/
+      dest: ~/.config/mise/
+    - src: .ssh/
+      dest: ~/.ssh/
+
+services:
+  - sshd
+  - docker
+
+setup_scripts:
+  - scripts/setup-ssh-agent.sh
+  - scripts/setup-docker.sh

@@ -1,0 +1,9 @@
+# Glow Configuration
+# Location: ~/.config/glow/glow.yml
+
+style: "dark"
+pager: true
+width: 80
+
+charm:
+  soft_wrap: 80

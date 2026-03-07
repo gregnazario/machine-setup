@@ -1,0 +1,27 @@
+platform: freebsd
+package_manager: pkg
+ports_enabled: true
+
+packages:
+  base:
+    - git
+    - git-crypt
+    - gnupg
+    - syncthing
+
+platform_specific:
+  - name: bsdutils
+    description: FreeBSD-specific utilities
+    use_ports: false
+  - name: sudo
+    description: Sudo utility
+    use_ports: false
+
+services:
+  - sshd
+  - syncthing
+
+ports_options:
+  editors/neovim:
+    - LUA
+    - PYTHON

@@ -1,0 +1,128 @@
+packages:
+  shell:
+    - name: nushell
+      description: Modern shell with great autocompletion
+      required: true
+  editors:
+    - name: neovim
+      description: Modern, extensible text editor
+      required: true
+  cli_essential:
+    - name: ripgrep
+      description: Fast grep alternative
+      required: true
+    - name: fd-find
+      description: Fast find alternative
+      required: true
+    - name: fzf
+      description: Fuzzy finder
+      required: true
+  multiplexer:
+    - name: zellij
+      description: Modern terminal multiplexer
+      required: false
+  cli_modern:
+    - name: bat
+      description: cat with syntax highlighting
+      required: false
+    - name: eza
+      description: Modern ls replacement
+      required: false
+    - name: dust
+      description: du alternative with visualization
+      required: false
+    - name: bottom
+      description: System monitor TUI
+      required: false
+    - name: procs
+      description: Modern process viewer
+      required: false
+  utilities:
+    - name: jq
+      description: JSON processor
+      required: false
+    - name: httpie
+      description: User-friendly HTTP client
+      required: false
+    - name: doggo
+      description: Modern DNS client
+      required: false
+    - name: gping
+      description: ping with graph
+      required: false
+    - name: rsync
+      description: Fast incremental file transfer
+      required: false
+    - name: yazi
+      description: Terminal file manager
+      required: false
+    - name: ouch
+      description: Archive extractor/compressor
+      required: false
+    - name: asciinema
+      description: Terminal session recorder
+      required: false
+    - name: glow
+      description: Markdown renderer
+      required: false
+    - name: fastfetch
+      description: System information viewer
+      required: false
+  security:
+    - name: gnupg
+      description: GPG encryption and signing
+      required: true
+    - name: pass
+      description: Password manager
+      required: false
+    - name: openssh
+      description: SSH client and server
+      required: true
+  version_manager:
+    - name: mise
+      description: Runtime version manager
+      required: true
+  languages:
+    - name: python3
+      description: Python 3 interpreter
+      required: false
+    - name: rustup
+      description: Rust toolchain installer
+      required: false
+  git:
+    - name: git
+      description: Version control system
+      required: true
+    - name: gh
+      description: GitHub CLI
+      required: false
+  devops:
+    - name: docker
+      description: Container runtime
+      required: false
+    - name: kubectl
+      description: Kubernetes CLI
+      required: false
+
+package_mapping:
+  fd-find:
+    ubuntu: fd-find
+    fedora: fd-find
+    debian: fd-find
+    void: fd
+    gentoo: sys-apps/fd
+    freebsd: fd-find
+    macos: fd
+    windows: fd.find
+  neovim:
+    gentoo: app-editors/neovim
+    freebsd: editors/neovim
+  nushell:
+    gentoo: app-shells/nushell-bin
+    freebsd: shells/nushell
+  ripgrep:
+    gentoo: sys-apps/ripgrep
+    freebsd: textproc/ripgrep
+  fzf:
+    gentoo: app-shells/fzf
+    freebsd: textproc/fzf

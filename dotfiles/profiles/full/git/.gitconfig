@@ -1,0 +1,67 @@
+# Git Configuration (Full)
+# Location: ~/.gitconfig
+
+[user]
+    name = Your Name
+    email = your.email@example.com
+    signingkey = YOUR_GPG_KEY_ID
+
+[core]
+    editor = nvim
+    autocrlf = input
+    excludesfile = ~/.gitignore_global
+    pager = bat
+
+[credential]
+    helper = cache --timeout=3600
+
+[color]
+    ui = auto
+
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+    whitespace = red reverse
+
+[commit]
+    gpgsign = true
+    verbose = true
+
+[push]
+    default = simple
+    followTags = true
+
+[pull]
+    rebase = false
+
+[init]
+    defaultBranch = main
+
+[diff]
+    tool = nvimdiff
+
+[difftool]
+    prompt = false
+
+[merge]
+    tool = nvimdiff
+
+[alias]
+    co = checkout
+    br = branch
+    ci = commit
+    st = status
+    unstage = reset HEAD --
+    last = log -1 HEAD
+    visual = !gitk
+    lg = log --oneline --decorate --all --graph
+    tree = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+    amend = commit --amend --no-edit
+    wip = !git add . && git commit -m 'WIP'
+    undo = reset HEAD~1 --mixed
+   contributors = shortlog --summary --numbered
+
+[rerere]
+    enabled = true

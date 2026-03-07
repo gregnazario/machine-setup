@@ -1,0 +1,38 @@
+// Zellij Configuration
+// Location: ~/.config/zellij/config.kdl
+
+keybinds {
+    normal {
+        bind "Alt n" { NewPane; }
+        bind "Alt h" { MoveFocus "Left"; }
+        bind "Alt l" { MoveFocus "Right"; }
+        bind "Alt j" { MoveFocus "Down"; }
+        bind "Alt k" { MoveFocus "Up"; }
+        bind "Alt +" { Resize "Increase"; }
+        bind "Alt -" { Resize "Decrease"; }
+    }
+    locked {
+        bind "Alt q" { Quit; }
+    }
+}
+
+themes {
+    gruvbox {
+        fg "#ebdbb2"
+        bg "#282828"
+        black "#282828"
+        red "#cc241d"
+        green "#98971a"
+        yellow "#d79921"
+        blue "#458588"
+        magenta "#b16286"
+        cyan "#689d6a"
+        white "#ebdbb2"
+        orange "#d65d0e"
+    }
+}
+
+theme "gruvbox"
+default_shell "nu"
+pane_frames false
+simplified_ui true

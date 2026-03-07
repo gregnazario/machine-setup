@@ -1,0 +1,14 @@
+# Mise Configuration
+# Location: ~/.config/mise/config.toml
+
+[tools]
+node = "lts"
+python = "3.12"
+rust = "stable"
+go = "latest"
+
+[settings]
+verbose = true
+asdf_compat = false
+jobs = 4
+experimental = true

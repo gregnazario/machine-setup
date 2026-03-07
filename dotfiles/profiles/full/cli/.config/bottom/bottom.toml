@@ -1,0 +1,10 @@
+# Bottom Configuration
+# Location: ~/.config/bottom/bottom.toml
+
+[flags]
+color = "gruvbox"
+temperature_type = "celsius"
+
+[colors]
+avg_cpu_color = "LightGreen"
+cpu_core_colors = ["LightMagenta", "LightYellow", "LightCyan", "LightGreen", "LightBlue", "LightRed"]
