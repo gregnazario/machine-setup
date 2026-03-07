@@ -1,0 +1,33 @@
+platform: windows
+package_manager: winget
+wsl: manual
+
+packages:
+  base:
+    - Git.Git
+    - Microsoft.VisualStudioCode
+
+platform_specific:
+  - name: Microsoft.WindowsTerminal
+    description: Modern terminal for Windows
+    required: true
+  - name: Microsoft.PowerShell
+    description: PowerShell 7
+    required: true
+  - name: gerardog.gsudo
+    description: Sudo for Windows
+    required: true
+  - name: Ghisler.TotalCommander
+    description: File manager
+    required: false
+  - name: GitHub.cli
+    description: GitHub CLI
+    required: true
+
+wsl_instructions: |
+  To install WSL manually:
+  1. Open PowerShell as Administrator
+  2. Run: wsl --install
+  3. Restart your computer
+  4. Install your preferred Linux distribution
+  5. Run this setup script inside WSL

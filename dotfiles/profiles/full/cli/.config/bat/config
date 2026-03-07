@@ -1,0 +1,7 @@
+# Bat Configuration
+# Location: ~/.config/bat/config
+
+--theme="gruvbox-dark"
+--style="header,grid,changes"
+--pager="less -RF"
+--italic-text=always

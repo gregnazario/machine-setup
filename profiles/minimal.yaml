@@ -1,0 +1,38 @@
+name: minimal
+description: Essential CLI tools only - ideal for servers and resource-constrained systems
+extends: null
+
+packages:
+  shell:
+    - nushell
+  editors:
+    - neovim
+  cli_essential:
+    - ripgrep
+    - fd-find
+    - fzf
+  git:
+    - git
+  version_manager:
+    - mise
+  security:
+    - gnupg
+    - openssh
+
+dotfiles:
+  source: profiles/minimal/
+  links:
+    - src: .config/nushell/
+      dest: ~/.config/nushell/
+    - src: .config/nvim/
+      dest: ~/.config/nvim/
+    - src: .gitconfig
+      dest: ~/.gitconfig
+    - src: .ssh/config
+      dest: ~/.ssh/config
+
+services:
+  - sshd
+
+setup_scripts:
+  - scripts/setup-ssh-agent.sh

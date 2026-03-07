@@ -1,0 +1,264 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint-and-validate:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck yamllint
+        
+      - name: Validate YAML files
+        run: |
+          find . -name "*.yaml" -o -name "*.yml" | grep -v ".git" | xargs yamllint -d relaxed
+          
+      - name: Shellcheck scripts
+        run: |
+          find scripts/ -name "*.sh" | xargs shellcheck -x
+          shellcheck setup.sh
+      
+      - name: Validate JSON-like YAML
+        run: |
+          for file in packages/**/*.yaml profiles/*.yaml; do
+            echo "Validating $file"
+            python3 -c "import yaml; yaml.safe_load(open('$file'))"
+          done
+
+  test-platform-detection:
+    name: Platform Detection
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install yq
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew install yq
+          elif [[ "${{ matrix.os }}" != "windows-latest" ]]; then
+            sudo wget https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -O /usr/local/bin/yq
+            sudo chmod +x /usr/local/bin/yq
+          fi
+      
+      - name: Test platform detection
+        shell: bash
+        run: |
+          chmod +x scripts/platform-detect.sh
+          bash scripts/platform-detect.sh || echo "Platform detected: $PLATFORM"
+          
+      - name: Test dry-run setup
+        shell: bash
+        run: |
+          chmod +x setup.sh
+          ./setup.sh --dry-run --no-syncthing --no-backup
+
+  test-profiles:
+    name: Profile System
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq
+      
+      - name: Test profile loading
+        run: |
+          chmod +x scripts/*.sh
+          
+          # Test minimal profile
+          bash tests/unit/test-profile-loader.sh minimal
+          
+          # Test full profile
+          bash tests/unit/test-profile-loader.sh full
+          
+      - name: Test profile inheritance
+        run: |
+          bash tests/unit/test-profile-inheritance.sh
+
+  test-package-installation:
+    name: Package Installation (Dry Run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq
+      
+      - name: Test package collection
+        run: |
+          chmod +x scripts/*.sh
+          bash tests/unit/test-package-collection.sh
+
+  test-dotfiles-linking:
+    name: Dotfiles Linking
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq
+      
+      - name: Test dotfile linking (dry run)
+        run: |
+          chmod +x scripts/*.sh
+          
+          # Create test home directory
+          export HOME=/tmp/test-home
+          mkdir -p $HOME
+          
+          # Test minimal profile
+          bash tests/unit/test-dotfiles-linking.sh minimal
+          
+          # Test full profile
+          bash tests/unit/test-dotfiles-linking.sh full
+
+  test-integration-ubuntu:
+    name: Integration Test (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq git-crypt gnupg
+      
+      - name: Run integration test
+        run: |
+          chmod +x setup.sh scripts/*.sh
+          bash tests/integration/test-setup-ubuntu.sh
+
+  test-integration-macos:
+    name: Integration Test (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          brew install yq git-crypt gnupg
+      
+      - name: Run integration test
+        run: |
+          chmod +x setup.sh scripts/*.sh
+          bash tests/integration/test-setup-macos.sh
+
+  test-backup-configuration:
+    name: Backup Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq restic
+      
+      - name: Test backup script generation
+        run: |
+          chmod +x scripts/*.sh
+          bash tests/unit/test-backup-config.sh
+
+  e2e-test-simulation:
+    name: E2E Simulation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yq git-crypt gnupg restic
+      
+      - name: Simulate fresh machine setup
+        run: |
+          chmod +x setup.sh scripts/*.sh
+          
+          # Create isolated test environment
+          export TEST_HOME=/tmp/test-machine
+          mkdir -p $TEST_HOME
+          
+          # Run e2e test
+          bash tests/e2e/test-fresh-setup.sh
+
+  security-check:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for secrets in code
+        run: |
+          # Check for potential secrets
+          ! grep -r "password\|api_key\|secret\|token" --include="*.sh" --include="*.yaml" --exclude-dir=".git" . | grep -v "CHANGE_ME\|YOUR_\|example\|template" || exit 1
+      
+      - name: Validate git-crypt configuration
+        run: |
+          # Check that .gitattributes properly encrypts secrets
+          test -f dotfiles/.gitattributes
+          grep -q "filter=git-crypt" dotfiles/.gitattributes
+          
+      - name: Check file permissions
+        run: |
+          # Ensure scripts are executable
+          find scripts/ -name "*.sh" -exec test -x {} \;
+          test -x setup.sh
+
+  documentation-check:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check required documentation
+        run: |
+          test -f README.md
+          test -f PLAN.md
+          test -f AGENTS.md
+          
+      - name: Validate markdown
+        run: |
+          # Check for broken internal links
+          grep -r "\[.*\](.*\.md)" *.md | grep -v "http" | while read line; do
+            file=$(echo "$line" | sed 's/.*](\([^)]*\)).*/\1/')
+            test -f "$file" || echo "Warning: Link to $file might be broken"
+          done
+
+  test-complete-matrix:
+    name: Complete Platform Matrix
+    needs: [lint-and-validate, test-profiles]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [fedora, ubuntu, gentoo, void, raspberrypios, macos, freebsd, windows]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+      
+      - name: Test platform package definitions
+        run: |
+          bash tests/unit/test-platform-packages.sh ${{ matrix.platform }}

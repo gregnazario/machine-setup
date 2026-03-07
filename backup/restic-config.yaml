@@ -1,0 +1,56 @@
+# Restic Backup Configuration
+# Copy this file and fill in your credentials
+# This file will be encrypted by git-crypt
+
+# Repository location
+# For BackBlaze B2:
+repository: b2:your-bucket-name:machine-backup
+# For S3-compatible storage:
+# repository: s3:https://s3.example.com/bucket-name/machine-backup
+
+# Repository password (IMPORTANT: Use a strong password and store it safely!)
+password: "CHANGE_ME_STRONG_PASSWORD"
+
+# Backup schedule
+schedule: daily
+
+# Retention policy
+retention:
+  keep-daily: 7
+  keep-weekly: 4
+  keep-monthly: 12
+  keep-yearly: 2
+
+# Paths to backup
+paths:
+  - ~/dotfiles
+  - ~/.ssh
+  - ~/Documents
+  - ~/Projects
+  - ~/.config
+
+# Paths to exclude
+excludes:
+  - node_modules
+  - .git/objects
+  - "*.log"
+  - "*.tmp"
+  - __pycache__
+  - .cache
+  - "*.pyc"
+  - target/
+  - build/
+  - dist/
+  - .venv/
+  - venv/
+
+# BackBlaze B2 credentials
+b2:
+  account_id: "YOUR_B2_ACCOUNT_ID"
+  account_key: "YOUR_B2_ACCOUNT_KEY"
+
+# S3 credentials (if using S3-compatible storage)
+s3:
+  access_key: "YOUR_S3_ACCESS_KEY"
+  secret_key: "YOUR_S3_SECRET_KEY"
+  # region: "us-east-1"

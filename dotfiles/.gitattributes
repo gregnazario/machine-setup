@@ -1,0 +1,37 @@
+# git-crypt configuration
+# This file tells git-crypt which files to encrypt
+
+# Secrets
+secrets/** filter=git-crypt diff=git-crypt
+**/secrets/** filter=git-crypt diff=git-crypt
+
+# SSH keys
+**/.ssh/id_* filter=git-crypt diff=git-crypt
+**/.ssh/*_rsa filter=git-crypt diff=git-crypt
+**/.ssh/*_ed25519 filter=git-crypt diff=git-crypt
+**/.ssh/*.pem filter=git-crypt diff=git-crypt
+
+# GPG keys
+**/*.gpg filter=git-crypt diff=git-crypt
+**/*.asc filter=git-crypt diff=git-crypt
+**/gpg-keys/** filter=git-crypt diff=git-crypt
+
+# API tokens and credentials
+**/api-tokens/** filter=git-crypt diff=git-crypt
+**/.env filter=git-crypt diff=git-crypt
+**/.env.* filter=git-crypt diff=git-crypt
+**/credentials/** filter=git-crypt diff=git-crypt
+**/backup-credentials/** filter=git-crypt diff=git-crypt
+
+# Certificate files
+**/*.p12 filter=git-crypt diff=git-crypt
+**/*.key filter=git-crypt diff=git-crypt
+**/*.crt filter=git-crypt diff=git-crypt
+
+# Backup config with passwords
+backup/restic-config.yaml filter=git-crypt diff=git-crypt
+
+# Don't encrypt these
+.gitattributes !filter !diff
+README.md !filter !diff
+PLAN.md !filter !diff
