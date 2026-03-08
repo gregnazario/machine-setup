@@ -55,7 +55,7 @@ install_packages_apt() {
     fi
     
     sudo apt update
-    sudo apt install -y $packages
+    sudo apt install -y "$packages"
 }
 
 install_packages_dnf() {
@@ -68,7 +68,7 @@ install_packages_dnf() {
         return
     fi
     
-    sudo dnf install -y $packages
+    sudo dnf install -y "$packages"
 }
 
 install_packages_emerge() {
@@ -81,7 +81,7 @@ install_packages_emerge() {
         return
     fi
     
-    sudo emerge --ask $packages
+    sudo emerge --ask "$packages"
 }
 
 install_packages_xbps() {
@@ -94,7 +94,7 @@ install_packages_xbps() {
         return
     fi
     
-    sudo xbps-install -S $packages
+    sudo xbps-install -S "$packages"
 }
 
 install_packages_homebrew() {
@@ -107,7 +107,7 @@ install_packages_homebrew() {
         return
     fi
     
-    brew install $packages
+    brew install "$packages"
 }
 
 install_packages_pkg() {
@@ -120,7 +120,7 @@ install_packages_pkg() {
         return
     fi
     
-    sudo pkg install -y $packages
+    sudo pkg install -y "$packages"
 }
 
 install_packages_winget() {
@@ -148,7 +148,7 @@ install_packages_pacman() {
         return
     fi
     
-    sudo pacman -S --noconfirm --needed $packages
+    sudo pacman -S --noconfirm --needed "$packages"
 }
 
 install_packages_apk() {
@@ -161,7 +161,7 @@ install_packages_apk() {
         return
     fi
     
-    sudo apk add $packages
+    sudo apk add "$packages"
 }
 
 install_packages_zypper() {
@@ -174,51 +174,54 @@ install_packages_zypper() {
         return
     fi
     
-    sudo zypper install -y $packages
+    sudo zypper install -y "$packages"
 }
 
 get_mapped_package_name() {
     local package_name="$1"
     local common_yaml="${SCRIPT_DIR}/../packages/common.yaml"
+    local common_content
+    local platform_mapped
+    local pm_mapped
     
-    local mapped_name=""
-    local common_content=$(cat "$common_yaml")
+    common_content=$(cat "$common_yaml")
     
-    local platform_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PLATFORM}" "")
+    platform_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PLATFORM}" "")
     
     if [[ -n "$platform_mapped" && "$platform_mapped" != "null" ]]; then
-        mapped_name="$platform_mapped"
+        echo "$platform_mapped"
     else
-        local pm_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PACKAGE_MANAGER}" "")
+        pm_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PACKAGE_MANAGER}" "")
         if [[ -n "$pm_mapped" && "$pm_mapped" != "null" ]]; then
-            mapped_name="$pm_mapped"
+            echo "$pm_mapped"
+        else
+            echo "$package_name"
         fi
-    fi
-    
-    if [[ -n "$mapped_name" ]]; then
-        echo "$mapped_name"
-    else
-        echo "$package_name"
     fi
 }
 
 collect_packages() {
     local packages=""
+    local profile_packages
+    local mapped_package
     
-    local profile_packages=$(get_profile_packages)
+    profile_packages=$(get_profile_packages)
     
     while IFS= read -r line; do
         if [[ "$line" =~ ^[[:space:]]*-[[:space:]](.+)$ ]]; then
             local package="${BASH_REMATCH[1]}"
-            local mapped_package=$(get_mapped_package_name "$package")
+            mapped_package=$(get_mapped_package_name "$package")
             packages="$packages $mapped_package"
         fi
     done <<< "$profile_packages"
     
     local platform_yaml="${SCRIPT_DIR}/../packages/platforms/${PLATFORM}.yaml"
     if [[ -f "$platform_yaml" ]]; then
-        local platform_content=$(cat "$platform_yaml")
-        local platform_packages=$(yaml_get_list "$platform_content" "packages.base")
+        local platform_content
+        local platform_packages
+        
+        platform_content=$(cat "$platform_yaml")
+        platform_packages=$(yaml_get_list "$platform_content" "packages.base")
         while IFS= read -r package; do
             if [[ -n "$package" ]]; then
                 packages="$packages $package"
@@ -271,6 +274,8 @@ install_packages() {
 }
 
 main() {
+    local packages
+    
     parse_args "$@"
     
     detect_platform
@@ -285,7 +290,7 @@ main() {
     load_profile "$PROFILE"
     log_info "Using profile: $PROFILE"
     
-    local packages=$(collect_packages)
+    packages=$(collect_packages)
     log_info "Packages to install: $packages"
     
     if [[ -n "$packages" ]]; then
