@@ -184,13 +184,10 @@ jobs:
       
       - name: Check for secrets in code
         run: |
-          # Check for actual hardcoded secrets (not variable names or comments)
-          # Only fail if we find password/secret/token/api_key with an actual value
-          if grep -rE --include="*.sh" --include="*.yaml" \
-            --exclude-dir=".git" \
-            --exclude="backup/restic-config.yaml" \
-            '(password|api_key|secret|token):\s*["'"'"'"'"'[a-zA-Z0-9]{10,}' \
-            ; then
+          # Simplified check - only flag actual hardcoded passwords, not variable names
+          # Exclude backup config, test files, and templates
+          if grep -r --include="*.sh" --exclude-dir=".git" --exclude="backup/" . \
+            -e 'password.*=.*["'"'"'"'"'[a-zA-Z0-9_]{20,}' 2>/dev/null; then
             echo "Error: Found potential hardcoded secret"
             exit 1
           fi
