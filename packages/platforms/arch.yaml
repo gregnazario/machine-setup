@@ -1,0 +1,32 @@
+platform: arch
+package_manager: pacman
+
+packages:
+  base:
+    - git
+    - git-crypt
+    - gnupg
+    - syncthing
+    - base-devel
+
+platform_specific:
+  - name: pacman-contrib
+    description: Additional pacman tools
+
+services:
+  - sshd
+  - docker
+  - syncthing
+
+pacman_config:
+  parallel_downloads: 5
+  color: true
+  verbose_pkg_lists: true
+  ilovecandy: true
+
+aur_helper: yay
+aur_packages:
+  - name: mise
+    description: Runtime version manager
+  - name: bottom-bin
+    description: System monitor (binary)

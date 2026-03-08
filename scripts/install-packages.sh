@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
 source "${SCRIPT_DIR}/profile-loader.sh"
+source "${SCRIPT_DIR}/yaml-parser.sh"
 
 PROFILE=""
 DRY_RUN=false
@@ -137,13 +138,64 @@ install_packages_winget() {
     done
 }
 
+install_packages_pacman() {
+    log_info "Installing packages with pacman..."
+    
+    local packages="$1"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "Would install: $packages"
+        return
+    fi
+    
+    sudo pacman -S --noconfirm --needed $packages
+}
+
+install_packages_apk() {
+    log_info "Installing packages with apk (Alpine)..."
+    
+    local packages="$1"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "Would install: $packages"
+        return
+    fi
+    
+    sudo apk add $packages
+}
+
+install_packages_zypper() {
+    log_info "Installing packages with zypper (OpenSUSE)..."
+    
+    local packages="$1"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "Would install: $packages"
+        return
+    fi
+    
+    sudo zypper install -y $packages
+}
+
 get_mapped_package_name() {
     local package_name="$1"
     local common_yaml="${SCRIPT_DIR}/../packages/common.yaml"
     
-    local mapped_name=$(yq eval ".package_mapping.${package_name}.${PLATFORM} // .package_mapping.${package_name}.${PACKAGE_MANAGER}" "$common_yaml" 2>/dev/null)
+    local mapped_name=""
+    local common_content=$(cat "$common_yaml")
     
-    if [[ -n "$mapped_name" && "$mapped_name" != "null" ]]; then
+    local platform_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PLATFORM}" "")
+    
+    if [[ -n "$platform_mapped" && "$platform_mapped" != "null" ]]; then
+        mapped_name="$platform_mapped"
+    else
+        local pm_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PACKAGE_MANAGER}" "")
+        if [[ -n "$pm_mapped" && "$pm_mapped" != "null" ]]; then
+            mapped_name="$pm_mapped"
+        fi
+    fi
+    
+    if [[ -n "$mapped_name" ]]; then
         echo "$mapped_name"
     else
         echo "$package_name"
@@ -165,7 +217,8 @@ collect_packages() {
     
     local platform_yaml="${SCRIPT_DIR}/../packages/platforms/${PLATFORM}.yaml"
     if [[ -f "$platform_yaml" ]]; then
-        local platform_packages=$(yq eval '.packages.base[]?' "$platform_yaml")
+        local platform_content=$(cat "$platform_yaml")
+        local platform_packages=$(yaml_get_list "$platform_content" "packages.base")
         while IFS= read -r package; do
             if [[ -n "$package" ]]; then
                 packages="$packages $package"
@@ -201,8 +254,17 @@ install_packages() {
         winget)
             install_packages_winget "$packages"
             ;;
+        pacman)
+            install_packages_pacman "$packages"
+            ;;
+        apk)
+            install_packages_apk "$packages"
+            ;;
+        zypper)
+            install_packages_zypper "$packages"
+            ;;
         *)
-            log_error "Unknown package manager: $PACKAGE_MANAGER"
+            log_error "Unsupported package manager: $PACKAGE_MANAGER"
             exit 1
             ;;
     esac

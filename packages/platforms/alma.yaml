@@ -1,0 +1,29 @@
+platform: alma
+package_manager: dnf
+
+packages:
+  base:
+    - git
+    - git-crypt
+    - gnupg2
+    - syncthing
+    - "@Development Tools"
+    - dnf-plugins-core
+
+platform_specific:
+  - name: docker-ce
+    description: Docker CE
+    repo: docker-ce-stable
+    repo_url: https://download.docker.com/linux/centos/docker-ce.repo
+
+services:
+  - docker
+  - syncthing
+
+dnf_repos:
+  - name: docker-ce-stable
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+  - name: epel
+    url: https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+epel: true

@@ -30,8 +30,12 @@ detect_platform() {
                 PLATFORM="fedora"
                 PACKAGE_MANAGER="dnf"
                 ;;
-            ubuntu|linuxmint|pop|debian)
+            ubuntu|linuxmint|pop)
                 PLATFORM="ubuntu"
+                PACKAGE_MANAGER="apt"
+                ;;
+            debian)
+                PLATFORM="debian"
                 PACKAGE_MANAGER="apt"
                 ;;
             raspbian)
@@ -46,9 +50,29 @@ detect_platform() {
                 PLATFORM="void"
                 PACKAGE_MANAGER="xbps"
                 ;;
+            arch|manjaro|endeavouros|garuda)
+                PLATFORM="arch"
+                PACKAGE_MANAGER="pacman"
+                ;;
+            alpine)
+                PLATFORM="alpine"
+                PACKAGE_MANAGER="apk"
+                ;;
+            opensuse*)
+                PLATFORM="opensuse"
+                PACKAGE_MANAGER="zypper"
+                ;;
+            rocky)
+                PLATFORM="rocky"
+                PACKAGE_MANAGER="dnf"
+                ;;
+            almalinux)
+                PLATFORM="alma"
+                PACKAGE_MANAGER="dnf"
+                ;;
             *)
                 log_error "Unsupported Linux distribution: $ID"
-                log_error "Supported: fedora, ubuntu, debian, gentoo, void, raspbian"
+                log_error "Supported: fedora, ubuntu, debian, gentoo, void, raspbian, arch, alpine, opensuse, rocky, alma"
                 exit 1
                 ;;
         esac

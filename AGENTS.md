@@ -5,7 +5,7 @@ This document provides comprehensive guidance for AI agents working with this ma
 ## Repository Overview
 
 This is a **cross-platform machine configuration and syncing system** that:
-- Manages packages across 8 different operating systems
+- Manages packages across 14 different operating systems
 - Uses a profile-based system (minimal, full, custom)
 - Syncs dotfiles via Syncthing
 - Encrypts secrets with git-crypt
@@ -124,9 +124,15 @@ Existing files are backed up with timestamps before linking.
 |----------|----------------|------------------|
 | Fedora | dnf | `/etc/os-release` ID=fedora |
 | Ubuntu | apt | `/etc/os-release` ID=ubuntu |
-| RaspberryPiOS | apt | `/etc/os-release` ID=raspbian |
+| Debian | apt | `/etc/os-release` ID=debian |
 | Gentoo | emerge | `/etc/os-release` ID=gentoo |
 | Void | xbps | `/etc/os-release` ID=void |
+| Arch | pacman | `/etc/os-release` ID=arch, manjaro, endeavouros, garuda |
+| Alpine | apk | `/etc/os-release` ID=alpine |
+| OpenSUSE | zypper | `/etc/os-release` ID=opensuse* |
+| Rocky | dnf | `/etc/os-release` ID=rocky |
+| Alma | dnf | `/etc/os-release` ID=almalinux |
+| RaspberryPiOS | apt | `/etc/os-release` ID=raspbian |
 | macOS | homebrew | `uname` = Darwin |
 | FreeBSD | pkg | `uname` = FreeBSD |
 | Windows 11 | winget | `uname -r` contains "Microsoft" |

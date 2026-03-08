@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
+source "${SCRIPT_DIR}/yaml-parser.sh"
 
 PROFILE_NAME=""
 PROFILE_DATA=""
@@ -64,29 +65,64 @@ merge_profiles() {
     local base_data="$1"
     local overlay_data="$2"
     
-    echo "$base_data" > /tmp/base_profile.yaml
-    echo "$overlay_data" > /tmp/overlay_profile.yaml
-    
-    yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1)' \
-        /tmp/base_profile.yaml /tmp/overlay_profile.yaml
-    
-    rm -f /tmp/base_profile.yaml /tmp/overlay_profile.yaml
+    yaml_merge "$base_data" "$overlay_data"
 }
 
 get_profile_packages() {
-    echo "$PROFILE_DATA" | yq eval '.packages' -
+    local packages_yaml=$(echo "$PROFILE_DATA" | _yaml_extract_section_stdin "packages")
+    echo "$packages_yaml"
+}
+
+_yaml_extract_section_stdin() {
+    local section_name="$1"
+    
+    local in_section=false
+    local section_depth=0
+    local section_content=""
+    
+    while IFS= read -r line; do
+        local stripped="${line#"${line%%[![:space:]]*}"}"
+        local leading_spaces=$((${#line} - ${#stripped}))
+        local line_depth=$((leading_spaces / 2))
+        
+        if [[ "$stripped" =~ ^${section_name}:[[:space:]]*(.*)$ ]]; then
+            in_section=true
+            section_depth=$line_depth
+            local value="${BASH_REMATCH[1]}"
+            if [[ -n "$value" && "$value" != "null" ]]; then
+                echo "$line"
+                return
+            fi
+            continue
+        fi
+        
+        if [[ $in_section == true ]]; then
+            if [[ $line_depth -gt $section_depth ]]; then
+                section_content="$section_content$line
+"
+            else
+                break
+            fi
+        fi
+    done
+    
+    if [[ -n "$section_content" ]]; then
+        echo "${section_name}:"
+        echo -n "$section_content"
+    fi
 }
 
 get_profile_dotfiles() {
-    echo "$PROFILE_DATA" | yq eval '.dotfiles' -
+    local dotfiles_yaml=$(echo "$PROFILE_DATA" | _yaml_extract_section_stdin "dotfiles")
+    echo "$dotfiles_yaml"
 }
 
 get_profile_services() {
-    echo "$PROFILE_DATA" | yq eval '.services[]?' -
+    yaml_get_list "$PROFILE_DATA" "services"
 }
 
 get_profile_scripts() {
-    echo "$PROFILE_DATA" | yq eval '.setup_scripts[]?' -
+    yaml_get_list "$PROFILE_DATA" "setup_scripts"
 }
 
 get_default_profile_for_platform() {

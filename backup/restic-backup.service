@@ -1,0 +1,26 @@
+[Unit]
+Description=Restic Backup Service
+Documentation=https://restic.readthedocs.io/
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# IMPORTANT: Update these paths to match your setup
+ExecStart=/home/YOUR_USERNAME/machine-setup/backup/backup.sh
+User=YOUR_USERNAME
+Group=YOUR_USERNAME
+
+# Environment (optional - if you want to set env vars here)
+# Environment="RESTIC_PASSWORD_FILE=/path/to/password"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits
+Nice=19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

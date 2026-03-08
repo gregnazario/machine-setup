@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
 source "${SCRIPT_DIR}/profile-loader.sh"
+source "${SCRIPT_DIR}/yaml-parser.sh"
 
 PROFILE=""
 DRY_RUN=false
@@ -84,7 +85,8 @@ create_symlink() {
 }
 
 link_dotfiles() {
-    local dotfiles_source=$(get_profile_dotfiles | yq eval '.source' -)
+    local dotfiles_config=$(get_profile_dotfiles)
+    local dotfiles_source=$(yaml_get "$dotfiles_config" "source" "")
     local dotfiles_dir="${SCRIPT_DIR}/../dotfiles/${dotfiles_source}"
     
     if [[ ! -d "$dotfiles_dir" ]]; then
@@ -94,11 +96,13 @@ link_dotfiles() {
     
     log_info "Linking dotfiles from: $dotfiles_dir"
     
-    local links=$(get_profile_dotfiles | yq eval '.links[]' -)
+    local links=$(yaml_get_objects "$dotfiles_config" "links")
     
     while IFS= read -r link; do
-        local src=$(echo "$link" | yq eval '.src' -)
-        local dest=$(echo "$link" | yq eval '.dest' -)
+        [[ -z "$link" ]] && continue
+        
+        local src=$(yaml_object_get "$link" "src")
+        local dest=$(yaml_object_get "$link" "dest")
         
         src="${src/#\~/$HOME}"
         dest="${dest/#\~/$HOME}"

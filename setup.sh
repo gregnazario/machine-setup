@@ -40,8 +40,14 @@ Examples:
 Supported Platforms:
     - Fedora (dnf)
     - Ubuntu (apt)
+    - Debian (apt)
     - Gentoo (emerge)
     - Void Linux (xbps)
+    - Arch Linux (pacman)
+    - Alpine Linux (apk)
+    - OpenSUSE (zypper)
+    - Rocky Linux (dnf)
+    - AlmaLinux (dnf)
     - RaspberryPiOS (apt)
     - macOS (homebrew)
     - FreeBSD (pkg)
@@ -66,12 +72,12 @@ list_profiles() {
 show_profile() {
     local profile_name="$1"
     local profile_file="${SCRIPT_DIR}/profiles/${profile_name}.yaml"
-    
+
     if [[ ! -f "$profile_file" ]]; then
         echo "Error: Profile '$profile_name' not found."
         exit 1
     fi
-    
+
     echo "Profile: $profile_name"
     echo
     cat "$profile_file"
@@ -127,21 +133,10 @@ parse_args() {
 
 check_prerequisites() {
     log_info "Checking prerequisites..."
-    
+
     if ! command -v git &> /dev/null; then
         log_error "git is not installed. Please install git first."
         exit 1
-    fi
-    
-    if ! command -v yq &> /dev/null; then
-        log_warn "yq is not installed. Installing..."
-        if [[ "$PLATFORM" == "macos" ]]; then
-            brew install yq
-        elif [[ "$PLATFORM" != "windows" ]]; then
-            curl -sL https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -o /tmp/yq
-            chmod +x /tmp/yq
-            sudo mv /tmp/yq /usr/local/bin/yq
-        fi
     fi
 }
 
@@ -163,64 +158,64 @@ log_success() {
 
 main() {
     parse_args "$@"
-    
+
     log_info "Starting machine setup..."
-    
+
     detect_platform
     log_info "Detected platform: $PLATFORM"
-    
+
     if [[ "$PROFILE" == "auto" ]]; then
         PROFILE=$(get_default_profile_for_platform)
         log_info "Auto-detected profile: $PROFILE"
     fi
-    
+
     load_profile "$PROFILE"
     log_info "Using profile: $PROFILE"
-    
+
     check_prerequisites
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         log_warn "DRY RUN MODE - No changes will be made"
     fi
-    
+
     if [[ "$INSTALL_PACKAGES" == true ]]; then
         log_info "Installing packages..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/scripts/install-packages.sh" --profile "$PROFILE"
+            "${SCRIPT_DIR}/install-packages.sh" --profile "$PROFILE"
         else
             echo "  Would install packages for profile: $PROFILE"
         fi
     fi
-    
+
     if [[ "$LINK_DOTFILES" == true ]]; then
         log_info "Linking dotfiles..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/scripts/link-dotfiles.sh" --profile "$PROFILE"
+            "${SCRIPT_DIR}/link-dotfiles.sh" --profile "$PROFILE"
         else
             echo "  Would link dotfiles for profile: $PROFILE"
         fi
     fi
-    
+
     if [[ "$SETUP_SYNCTHING" == true ]]; then
         log_info "Setting up Syncthing..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/scripts/setup-syncthing.sh"
+            "${SCRIPT_DIR}/setup-syncthing.sh"
         else
             echo "  Would setup Syncthing"
         fi
     fi
-    
+
     if [[ "$SETUP_BACKUP" == true ]]; then
         log_info "Setting up backup..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/scripts/setup-backup.sh"
+            "${SCRIPT_DIR}/setup-backup.sh"
         else
             echo "  Would setup backup with Restic"
         fi
     fi
-    
+
     log_success "Setup complete!"
-    
+
     if [[ "$PLATFORM" != "windows" ]]; then
         log_info "Next steps:"
         echo "  1. Unlock git-crypt: git-crypt unlock"

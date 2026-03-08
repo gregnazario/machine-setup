@@ -4,7 +4,7 @@ Cross-platform machine configuration and syncing system with profile-based packa
 
 ## Features
 
-- **Cross-Platform Support**: Fedora, Ubuntu, Gentoo, Void, RaspberryPiOS, macOS, FreeBSD, Windows 11
+- **Cross-Platform Support**: Fedora, Ubuntu, Debian, Gentoo, Void, Arch, Alpine, OpenSUSE, Rocky, Alma, RaspberryPiOS, macOS, FreeBSD, Windows 11
 - **Profile System**: Minimal, full, or custom configurations
 - **Dotfiles Sync**: Real-time synchronization via Syncthing
 - **Secrets Management**: Encrypted secrets with git-crypt
@@ -32,8 +32,14 @@ cd machine-setup
 |----------|----------------|-----------------|
 | Fedora | dnf | full |
 | Ubuntu | apt | full |
+| Debian | apt | full |
 | Gentoo | emerge | full |
 | Void Linux | xbps | full |
+| Arch Linux | pacman | full |
+| Alpine Linux | apk | full |
+| OpenSUSE | zypper | full |
+| Rocky Linux | dnf | full |
+| AlmaLinux | dnf | full |
 | RaspberryPiOS | apt | minimal |
 | macOS | Homebrew | full |
 | FreeBSD | pkg + ports | full |
@@ -317,8 +323,14 @@ Each platform has its own package file in `packages/platforms/`:
 - `macos.yaml`
 - `fedora.yaml`
 - `ubuntu.yaml`
+- `debian.yaml`
 - `gentoo.yaml`
 - `void.yaml`
+- `arch.yaml`
+- `alpine.yaml`
+- `opensuse.yaml`
+- `rocky.yaml`
+- `alma.yaml`
 - `freebsd.yaml`
 - `raspberrypios.yaml`
 - `windows.yaml`
