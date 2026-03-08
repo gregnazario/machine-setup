@@ -7,6 +7,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+source "${REPO_ROOT}/scripts/yaml-parser.sh"
+
 echo "Running macOS integration test"
 
 # Create isolated test environment
@@ -78,13 +80,14 @@ if [[ ! -f "$MACOS_PACKAGES" ]]; then
 fi
 
 # Check for macOS-specific configurations
-HOMEBREW_TAPS=$(yq eval '.homebrew_taps[]?' "$MACOS_PACKAGES")
+MACOS_CONTENT=$(cat "$MACOS_PACKAGES")
+HOMEBREW_TAPS=$(yaml_get_list "$MACOS_CONTENT" "homebrew_taps")
 if [[ -n "$HOMEBREW_TAPS" ]]; then
     echo "✅ Homebrew taps configured: $(echo "$HOMEBREW_TAPS" | head -1)"
 fi
 
 # Check for OrbStack (Docker alternative for macOS)
-PLATFORM_SPECIFIC=$(yq eval '.platform_specific[]?' "$MACOS_PACKAGES")
+PLATFORM_SPECIFIC=$(yaml_get_list "$MACOS_CONTENT" "platform_specific")
 if echo "$PLATFORM_SPECIFIC" | grep -q "orbstack"; then
     echo "✅ OrbStack configured for macOS"
 fi

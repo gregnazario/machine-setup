@@ -7,6 +7,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+source "${REPO_ROOT}/scripts/yaml-parser.sh"
+
 PLATFORM="${1:-ubuntu}"
 
 echo "Testing package definitions for platform: $PLATFORM"
@@ -18,14 +20,10 @@ if [[ ! -f "$PLATFORM_FILE" ]]; then
     exit 1
 fi
 
-# Validate YAML syntax
-if ! yq eval '.' "$PLATFORM_FILE" > /dev/null 2>&1; then
-    echo "❌ FAIL: $PLATFORM_FILE is not valid YAML"
-    exit 1
-fi
+PLATFORM_CONTENT=$(cat "$PLATFORM_FILE")
 
 # Check required fields
-PLATFORM_NAME=$(yq eval '.platform' "$PLATFORM_FILE")
+PLATFORM_NAME=$(yaml_get "$PLATFORM_CONTENT" "platform" "")
 if [[ -z "$PLATFORM_NAME" || "$PLATFORM_NAME" == "null" ]]; then
     echo "❌ FAIL: Platform file missing 'platform' field"
     exit 1
@@ -36,7 +34,7 @@ if [[ "$PLATFORM_NAME" != "$PLATFORM" ]]; then
     exit 1
 fi
 
-PACKAGE_MANAGER=$(yq eval '.package_manager' "$PLATFORM_FILE")
+PACKAGE_MANAGER=$(yaml_get "$PLATFORM_CONTENT" "package_manager" "")
 if [[ -z "$PACKAGE_MANAGER" || "$PACKAGE_MANAGER" == "null" ]]; then
     echo "❌ FAIL: Platform file missing 'package_manager' field"
     exit 1
@@ -46,8 +44,8 @@ echo "Platform: $PLATFORM_NAME"
 echo "Package Manager: $PACKAGE_MANAGER"
 
 # Check that base packages exist
-BASE_PACKAGES=$(yq eval '.packages.base[]?' "$PLATFORM_FILE")
-if [[ -n "$BASE_PACKAGES" && "$BASE_PACKAGES" != "null" ]]; then
+BASE_PACKAGES=$(yaml_get_list "$PLATFORM_CONTENT" "packages.base")
+if [[ -n "$BASE_PACKAGES" ]]; then
     echo "Base packages: $(echo "$BASE_PACKAGES" | head -3)"
     echo "✅ Platform has base packages"
 else
@@ -58,21 +56,21 @@ fi
 case "$PLATFORM" in
     ubuntu|fedora|raspberrypios)
         # Check for apt/dnf repos if defined
-        REPOS=$(yq eval '.apt_repos[]?' "$PLATFORM_FILE")
+        REPOS=$(yaml_get_list "$PLATFORM_CONTENT" "apt_repos")
         if [[ -n "$REPOS" ]]; then
             echo "✅ Platform has repository configurations"
         fi
         ;;
     gentoo)
         # Check for USE flags
-        USE_FLAGS=$(yq eval '.features.use_flags' "$PLATFORM_FILE")
+        USE_FLAGS=$(yaml_get "$PLATFORM_CONTENT" "features.use_flags" "")
         if [[ -n "$USE_FLAGS" && "$USE_FLAGS" != "null" ]]; then
             echo "✅ Gentoo has USE flags configured"
         fi
         ;;
     windows)
         # Check for WSL instructions
-        WSL=$(yq eval '.wsl' "$PLATFORM_FILE")
+        WSL=$(yaml_get "$PLATFORM_CONTENT" "wsl" "")
         if [[ -n "$WSL" ]]; then
             echo "✅ Windows has WSL configuration"
         fi

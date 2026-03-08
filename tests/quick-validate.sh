@@ -49,14 +49,13 @@ echo "✅ All scripts are executable"
 
 # 3. Validate YAML files
 echo "3. Validating YAML files..."
-if ! command -v yq &> /dev/null; then
-    echo "⚠️  yq not installed, skipping YAML validation"
-else
-    for yaml in packages/**/*.yaml profiles/*.yaml backup/*.yaml; do
-        if ! yq eval '.' "$yaml" > /dev/null 2>&1; then
-            echo "❌ Invalid YAML: $yaml"
-            exit 1
-        fi
+for yaml in packages/**/*.yaml profiles/*.yaml backup/*.yaml; do
+    if ! python3 -c "import yaml; yaml.safe_load(open('$yaml'))" 2>/dev/null; then
+        echo "❌ Invalid YAML: $yaml"
+        exit 1
+    fi
+done
+echo "✅ All YAML files are valid"
     done
     echo "✅ All YAML files are valid"
 fi

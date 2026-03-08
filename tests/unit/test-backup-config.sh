@@ -7,6 +7,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+source "${REPO_ROOT}/scripts/yaml-parser.sh"
+
 echo "Testing backup configuration"
 
 BACKUP_CONFIG="${REPO_ROOT}/backup/restic-config.yaml"
@@ -19,32 +21,29 @@ if [[ ! -f "$BACKUP_CONFIG" ]]; then
 fi
 
 # Validate backup config YAML
-if ! yq eval '.' "$BACKUP_CONFIG" > /dev/null 2>&1; then
-    echo "❌ FAIL: Backup config is not valid YAML"
-    exit 1
-fi
+CONFIG_CONTENT=$(cat "$BACKUP_CONFIG")
 
 # Check required fields
-REPO=$(yq eval '.repository' "$BACKUP_CONFIG")
+REPO=$(yaml_get "$CONFIG_CONTENT" "repository" "")
 if [[ -z "$REPO" || "$REPO" == "null" ]]; then
     echo "❌ FAIL: Backup config missing 'repository'"
     exit 1
 fi
 
-PASSWORD=$(yq eval '.password' "$BACKUP_CONFIG")
+PASSWORD=$(yaml_get "$CONFIG_CONTENT" "password" "")
 if [[ -z "$PASSWORD" || "$PASSWORD" == "null" ]]; then
     echo "❌ FAIL: Backup config missing 'password'"
     exit 1
 fi
 
-RETENTION=$(yq eval '.retention' "$BACKUP_CONFIG")
+RETENTION=$(yaml_get "$CONFIG_CONTENT" "retention" "")
 if [[ -z "$RETENTION" || "$RETENTION" == "null" ]]; then
     echo "❌ FAIL: Backup config missing 'retention'"
     exit 1
 fi
 
-PATHS=$(yq eval '.paths' "$BACKUP_CONFIG")
-if [[ -z "$PATHS" || "$PATHS" == "null" ]]; then
+PATHS=$(yaml_get_list "$CONFIG_CONTENT" "paths")
+if [[ -z "$PATHS" ]]; then
     echo "❌ FAIL: Backup config missing 'paths'"
     exit 1
 fi
