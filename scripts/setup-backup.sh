@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
+source "${SCRIPT_DIR}/yaml-parser.sh"
 
 CONFIG_FILE="${SCRIPT_DIR}/../backup/restic-config.yaml"
 BACKUP_SCRIPT="${SCRIPT_DIR}/../backup/backup.sh"
@@ -102,7 +103,10 @@ create_backup_script() {
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/restic-config.yaml"
+
+source "${REPO_ROOT}/scripts/yaml-parser.sh"
 
 DRY_RUN=false
 
@@ -139,14 +143,16 @@ load_config() {
         exit 1
     fi
     
-    REPOSITORY=$(yq eval '.repository' "$CONFIG_FILE")
-    PASSWORD=$(yq eval '.password' "$CONFIG_FILE")
+    local config_content=$(cat "$CONFIG_FILE")
+    
+    REPOSITORY=$(yaml_get "$config_content" "repository" "")
+    PASSWORD=$(yaml_get "$config_content" "password" "")
     
     export RESTIC_REPOSITORY="$REPOSITORY"
     export RESTIC_PASSWORD="$PASSWORD"
     
-    B2_ACCOUNT_ID=$(yq eval '.b2.account_id' "$CONFIG_FILE")
-    B2_ACCOUNT_KEY=$(yq eval '.b2.account_key' "$CONFIG_FILE")
+    B2_ACCOUNT_ID=$(yaml_get "$config_content" "b2.account_id" "")
+    B2_ACCOUNT_KEY=$(yaml_get "$config_content" "b2.account_key" "")
     
     if [[ -n "$B2_ACCOUNT_ID" && -n "$B2_ACCOUNT_KEY" ]]; then
         export B2_ACCOUNT_ID
@@ -155,12 +161,13 @@ load_config() {
 }
 
 run_backup() {
-    local paths=$(yq eval '.paths[]' "$CONFIG_FILE")
-    local excludes=$(yq eval '.excludes[]' "$CONFIG_FILE")
+    local config_content=$(cat "$CONFIG_FILE")
+    local paths=$(yaml_get_list "$config_content" "paths")
+    local excludes=$(yaml_get_list "$config_content" "excludes")
     
     local exclude_args=""
     while IFS= read -r exclude; do
-        exclude_args="$exclude_args --exclude $exclude"
+        [[ -n "$exclude" ]] && exclude_args="$exclude_args --exclude $exclude"
     done <<< "$excludes"
     
     if [[ "$DRY_RUN" == true ]]; then
@@ -177,9 +184,9 @@ run_backup() {
     log_success "Backup complete!"
     
     log_info "Running retention policy..."
-    local keep_daily=$(yq eval '.retention.keep-daily' "$CONFIG_FILE")
-    local keep_weekly=$(yq eval '.retention.keep-weekly' "$CONFIG_FILE")
-    local keep_monthly=$(yq eval '.retention.keep-monthly' "$CONFIG_FILE")
+    local keep_daily=$(yaml_get "$config_content" "retention.keep-daily" "7")
+    local keep_weekly=$(yaml_get "$config_content" "retention.keep-weekly" "4")
+    local keep_monthly=$(yaml_get "$config_content" "retention.keep-monthly" "12")
     
     restic forget \
         --keep-daily "$keep_daily" \

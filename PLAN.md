@@ -22,10 +22,13 @@ Extensible YAML-based profiles with inheritance:
 
 ### Package Management
 Platform-specific package managers with unified YAML definitions:
-- Fedora: dnf
-- Ubuntu/RaspberryPiOS: apt
+- Fedora/Rocky/Alma: dnf
+- Ubuntu/RaspberryPiOS/Debian: apt
 - Gentoo: emerge + binpkg
 - Void: xbps
+- Arch: pacman
+- Alpine: apk
+- OpenSUSE: zypper
 - macOS: Homebrew
 - FreeBSD: pkg + ports
 - Windows: winget
@@ -46,8 +49,14 @@ machine-setup/
 │   │   ├── freebsd.yaml
 │   │   ├── fedora.yaml
 │   │   ├── ubuntu.yaml
+│   │   ├── debian.yaml
 │   │   ├── gentoo.yaml
 │   │   ├── void.yaml
+│   │   ├── arch.yaml
+│   │   ├── alpine.yaml
+│   │   ├── opensuse.yaml
+│   │   ├── rocky.yaml
+│   │   ├── alma.yaml
 │   │   ├── raspberrypios.yaml
 │   │   └── windows.yaml
 │   └── custom.yaml.example
@@ -223,10 +232,13 @@ cd machine-setup
 
 ### Platform Detection
 Auto-detect OS and map to package manager:
-- Fedora → dnf
-- Ubuntu/RaspberryPiOS → apt
+- Fedora/Rocky/Alma → dnf
+- Ubuntu/RaspberryPiOS/Debian → apt
 - Gentoo → emerge
 - Void → xbps
+- Arch/Manjaro → pacman
+- Alpine → apk
+- OpenSUSE → zypper
 - macOS → Homebrew
 - FreeBSD → pkg
 - Windows → winget
@@ -236,11 +248,17 @@ Some tools have different names across platforms:
 ```yaml
 fd:
   ubuntu: fd-find
+  debian: fd-find
   fedora: fd-find
+  rocky: fd-find
+  alma: fd-find
   void: fd
   gentoo: sys-apps/fd
   freebsd: fd-find
   macos: fd
+  arch: fd
+  alpine: fd
+  opensuse: fd
 ```
 
 ### Gentoo Special Handling
@@ -259,6 +277,38 @@ fd:
 - Support `ports` compilation for custom builds
 - Install `bsdutils` for FreeBSD-specific tools
 - ZFS support detection
+
+### Arch Linux Special Handling
+- Use `pacman` package manager
+- Support AUR packages via `yay` helper
+- Parallel downloads enabled by default
+- Package signing with `pacman-key`
+- Support for Arch derivatives (Manjaro, EndeavourOS, Garuda)
+
+### Alpine Linux Special Handling
+- Use `apk` package manager
+- OpenRC init system (not systemd)
+- Musl libc (not glibc)
+- Minimal base system
+- Community and testing repositories
+
+### Debian Special Handling
+- Stable/Testing/Unstable branches
+- Backports repository support
+- Similar to Ubuntu but different release cycle
+- EPEL-like additional repositories
+
+### OpenSUSE Special Handling
+- Use `zypper` package manager
+- Patterns for package groups
+- Tumbleweed (rolling) and Leap (stable) support
+- OBS (Open Build Service) repositories
+
+### Rocky/Alma Linux Special Handling
+- RHEL-compatible distributions
+- Use `dnf` package manager
+- EPEL repository support
+- Binary compatible with RHEL
 
 ---
 
