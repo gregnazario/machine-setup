@@ -7,6 +7,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+source "${REPO_ROOT}/scripts/yaml-parser.sh"
+
 echo "========================================="
 echo "E2E Test: Fresh Machine Setup Simulation"
 echo "========================================="
@@ -55,8 +57,9 @@ echo ""
 echo "Step 4: Loading profile..."
 load_profile "$DEFAULT_PROFILE"
 
-PACKAGES=$(get_profile_packages | yq eval '[.[] | .[]] | length' -)
-DOTFILES=$(get_profile_dotfiles | yq eval '.links | length' -)
+PACKAGES=$(get_profile_packages | grep -c "  - " || true)
+DOTFILES_CONFIG=$(get_profile_dotfiles)
+DOTFILES=$(echo "$DOTFILES_CONFIG" | grep -c "  - src:" || true)
 SERVICES=$(get_profile_services | wc -l)
 
 echo "Profile: $PROFILE_NAME"
@@ -77,7 +80,7 @@ echo "Total packages to install: $PACKAGE_COUNT"
 # Step 6: Validate dotfiles
 echo ""
 echo "Step 6: Validating dotfiles..."
-DOTFILES_SOURCE=$(get_profile_dotfiles | yq eval '.source' -)
+DOTFILES_SOURCE=$(yaml_get "$DOTFILES_CONFIG" "source" "")
 DOTFILES_DIR="${REPO_ROOT}/dotfiles/${DOTFILES_SOURCE}"
 
 if [[ ! -d "$DOTFILES_DIR" ]]; then
@@ -103,7 +106,8 @@ fi
 echo ""
 echo "Step 8: Validating backup configuration..."
 if [[ -f "backup/restic-config.yaml" ]]; then
-    BACKUP_PATHS=$(yq eval '.paths | length' backup/restic-config.yaml)
+    BACKUP_CONTENT=$(cat backup/restic-config.yaml)
+    BACKUP_PATHS=$(yaml_get_list "$BACKUP_CONTENT" "paths" | wc -l)
     echo "Backup paths configured: $BACKUP_PATHS"
 else
     echo "❌ FAIL: Backup config not found"
@@ -162,7 +166,7 @@ done
 
 # Check all YAML files are valid
 for yaml in packages/**/*.yaml profiles/*.yaml backup/*.yaml; do
-    if ! yq eval '.' "$yaml" > /dev/null 2>&1; then
+    if ! python3 -c "import yaml; yaml.safe_load(open('$yaml'))" 2>/dev/null; then
         echo "❌ FAIL: $yaml is not valid YAML"
         VALIDATION_PASSED=false
     fi

@@ -44,16 +44,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install yq
-        shell: bash
-        run: |
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            brew install yq
-          elif [[ "${{ matrix.os }}" != "windows-latest" ]]; then
-            sudo wget https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -O /usr/local/bin/yq
-            sudo chmod +x /usr/local/bin/yq
-          fi
-      
       - name: Test platform detection
         shell: bash
         run: |
@@ -71,11 +61,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y yq
       
       - name: Test profile loading
         run: |
@@ -97,11 +82,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y yq
-      
       - name: Test package collection
         run: |
           chmod +x scripts/*.sh
@@ -112,11 +92,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y yq
       
       - name: Test dotfile linking (dry run)
         run: |
@@ -141,7 +116,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y yq git-crypt gnupg
+          sudo apt-get install -y git-crypt gnupg
       
       - name: Run integration test
         run: |
@@ -156,7 +131,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          brew install yq git-crypt gnupg
+          brew install git-crypt gnupg
       
       - name: Run integration test
         run: |
@@ -172,7 +147,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y yq restic
+          sudo apt-get install -y restic
       
       - name: Test backup script generation
         run: |
@@ -188,7 +163,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y yq git-crypt gnupg restic
+          sudo apt-get install -y git-crypt gnupg restic
       
       - name: Simulate fresh machine setup
         run: |
@@ -253,11 +228,6 @@ jobs:
         platform: [fedora, ubuntu, gentoo, void, raspberrypios, macos, freebsd, windows]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install yq
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -O /usr/local/bin/yq
-          sudo chmod +x /usr/local/bin/yq
       
       - name: Test platform package definitions
         run: |

@@ -38,8 +38,8 @@ cd "$REPO_ROOT"
 
 # Check dependencies
 echo "Checking dependencies..."
-command -v yq >/dev/null 2>&1 || { echo "❌ yq is required but not installed."; exit 1; }
 command -v bash >/dev/null 2>&1 || { echo "❌ bash is required but not installed."; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "❌ python3 is required but not installed."; exit 1; }
 echo "✅ Dependencies satisfied"
 
 # Run unit tests
