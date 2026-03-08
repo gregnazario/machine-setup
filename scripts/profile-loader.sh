@@ -19,6 +19,7 @@ log_error() {
 load_profile() {
     local profile_name="$1"
     local profile_file="${SCRIPT_DIR}/../profiles/${profile_name}.yaml"
+    local extends
     
     if [[ ! -f "$profile_file" ]]; then
         log_error "Profile file not found: $profile_file"
@@ -27,12 +28,14 @@ load_profile() {
     
     PROFILE_NAME="$profile_name"
     
-    local extends=$(grep "^extends:" "$profile_file" | awk '{print $2}')
+    extends=$(grep "^extends:" "$profile_file" | awk '{print $2}')
     
     if [[ -n "$extends" && "$extends" != "null" ]]; then
         log_info "Profile extends: $extends"
-        local base_profile_data=$(load_profile_yaml "$extends")
-        local current_profile_data=$(cat "$profile_file")
+        local base_profile_data
+        local current_profile_data
+        base_profile_data=$(load_profile_yaml "$extends")
+        current_profile_data=$(cat "$profile_file")
         PROFILE_DATA=$(merge_profiles "$base_profile_data" "$current_profile_data")
     else
         PROFILE_DATA=$(cat "$profile_file")
