@@ -4,7 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
 source "${SCRIPT_DIR}/profile-loader.sh"
-source "${SCRIPT_DIR}/yaml-parser.sh"
+source "${SCRIPT_DIR}/ini-parser.sh"
+
+source "${SCRIPT_DIR}/ini-parser.sh"
 
 PROFILE=""
 DRY_RUN=false
@@ -179,24 +181,23 @@ install_packages_zypper() {
 
 get_mapped_package_name() {
     local package_name="$1"
-    local common_yaml="${SCRIPT_DIR}/../packages/common.yaml"
+    local common_file="${SCRIPT_DIR}/../packages/common.conf"
+    local mapped_name
     local common_content
     local platform_mapped
-    local pm_mapped
     
-    common_content=$(cat "$common_yaml")
+    if [[ ! -f "$common_file" ]]; then
+        echo "$package_name"
+        return
+    fi
     
-    platform_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PLATFORM}" "")
+    common_content=$(cat "$common_file")
+    platform_mapped=$(ini_get "$common_file" "package_mapping.${package_name}.${PLATFORM}" "$package_name")
     
-    if [[ -n "$platform_mapped" && "$platform_mapped" != "null" ]]; then
+    if [[ "$platform_mapped" != "$package_name" && -n "$platform_mapped" ]]; then
         echo "$platform_mapped"
     else
-        pm_mapped=$(yaml_get "$common_content" "package_mapping.${package_name}.${PACKAGE_MANAGER}" "")
-        if [[ -n "$pm_mapped" && "$pm_mapped" != "null" ]]; then
-            echo "$pm_mapped"
-        else
-            echo "$package_name"
-        fi
+        echo "$package_name"
     fi
 }
 
@@ -215,18 +216,21 @@ collect_packages() {
         fi
     done <<< "$profile_packages"
     
-    local platform_yaml="${SCRIPT_DIR}/../packages/platforms/${PLATFORM}.yaml"
-    if [[ -f "$platform_yaml" ]]; then
+    local platform_file="${SCRIPT_DIR}/../packages/platforms/${PLATFORM}.conf"
+    if [[ -f "$platform_file" ]]; then
         local platform_content
         local platform_packages
         
-        platform_content=$(cat "$platform_yaml")
-        platform_packages=$(yaml_get_list "$platform_content" "packages.base")
-        while IFS= read -r package; do
-            if [[ -n "$package" ]]; then
-                packages="$packages $package"
-            fi
-        done <<< "$platform_packages"
+        platform_content=$(cat "$platform_file")
+        platform_packages=$(ini_get "$platform_content" "packages.base" "")
+        
+        if [[ -n "$platform_packages" ]]; then
+            while IFS= read -r package; do
+                if [[ -n "$package" ]]; then
+                    packages="$packages $package"
+                fi
+            done <<< "$platform_packages"
+        fi
     fi
     
     echo "$packages" | tr ' ' '\n' | sort -u | tr '\n' ' '
@@ -274,8 +278,6 @@ install_packages() {
 }
 
 main() {
-    local packages
-    
     parse_args "$@"
     
     detect_platform
@@ -290,6 +292,7 @@ main() {
     load_profile "$PROFILE"
     log_info "Using profile: $PROFILE"
     
+    local packages
     packages=$(collect_packages)
     log_info "Packages to install: $packages"
     

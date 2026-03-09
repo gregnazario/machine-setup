@@ -3,10 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
-source "${SCRIPT_DIR}/yaml-parser.sh"
+source "${SCRIPT_DIR}/ini-parser.sh"
 
 PROFILE_NAME=""
-PROFILE_DATA=""
+PROFILE_FILE=""
 
 log_info() {
     echo -e "\033[0;34m[INFO]\033[0m $1"
@@ -18,114 +18,95 @@ log_error() {
 
 load_profile() {
     local profile_name="$1"
-    local profile_file="${SCRIPT_DIR}/../profiles/${profile_name}.yaml"
-    local extends
+    local profile_path="${SCRIPT_DIR}/../profiles/${profile_name}.conf"
     
-    if [[ ! -f "$profile_file" ]]; then
-        log_error "Profile file not found: $profile_file"
+    if [[ ! -f "$profile_path" ]]; then
+        log_error "Profile file not found: $profile_path"
         exit 1
     fi
     
     PROFILE_NAME="$profile_name"
+    PROFILE_FILE="$profile_path"
     
-    extends=$(grep "^extends:" "$profile_file" | awk '{print $2}')
+    local extends
+    extends=$(ini_get "$PROFILE_FILE" "profile" "extends" "false")
     
-    if [[ -n "$extends" && "$extends" != "null" ]]; then
+    if [[ -n "$extends" && "$extends" != "false" ]]; then
         log_info "Profile extends: $extends"
-        local base_profile_data
-        local current_profile_data
-        base_profile_data=$(load_profile_yaml "$extends")
-        current_profile_data=$(cat "$profile_file")
-        PROFILE_DATA=$(merge_profiles "$base_profile_data" "$current_profile_data")
-    else
-        PROFILE_DATA=$(cat "$profile_file")
+        local base_profile
+        base_profile="${SCRIPT_DIR}/../profiles/${extends}.conf"
+        
+        if [[ ! -f "$base_profile" ]]; then
+            log_error "Base profile not found: $base_profile"
+            exit 1
+        fi
+        
+        # Merge profiles (overlay takes precedence)
+        local tmp_profile
+        tmp_profile=$(mktemp)
+        ini_merge "$base_profile" "$PROFILE_FILE" "$tmp_profile"
+        PROFILE_FILE="$tmp_profile"
     fi
     
-    export PROFILE_NAME PROFILE_DATA
-}
-
-load_profile_yaml() {
-    local profile_name="$1"
-    local profile_file="${SCRIPT_DIR}/../profiles/${profile_name}.yaml"
-    
-    if [[ ! -f "$profile_file" ]]; then
-        log_error "Base profile not found: $profile_name"
-        exit 1
-    fi
-    
-    local extends=$(grep "^extends:" "$profile_file" | awk '{print $2}')
-    
-    if [[ -n "$extends" && "$extends" != "null" ]]; then
-        local base_data=$(load_profile_yaml "$extends")
-        local current_data=$(cat "$profile_file")
-        merge_profiles "$base_data" "$current_data"
-    else
-        cat "$profile_file"
-    fi
-}
-
-merge_profiles() {
-    local base_data="$1"
-    local overlay_data="$2"
-    
-    yaml_merge "$base_data" "$overlay_data"
+    export PROFILE_NAME PROFILE_FILE
 }
 
 get_profile_packages() {
-    local packages_yaml=$(echo "$PROFILE_DATA" | _yaml_extract_section_stdin "packages")
-    echo "$packages_yaml"
-}
-
-_yaml_extract_section_stdin() {
-    local section_name="$1"
-    
-    local in_section=false
-    local section_depth=0
-    local section_content=""
+    local packages=""
+    local current_section=""
+    local in_packages=false
     
     while IFS= read -r line; do
-        local stripped="${line#"${line%%[![:space:]]*}"}"
-        local leading_spaces=$((${#line} - ${#stripped}))
-        local line_depth=$((leading_spaces / 2))
-        
-        if [[ "$stripped" =~ ^${section_name}:[[:space:]]*(.*)$ ]]; then
-            in_section=true
-            section_depth=$line_depth
-            local value="${BASH_REMATCH[1]}"
-            if [[ -n "$value" && "$value" != "null" ]]; then
-                echo "$line"
-                return
+        # Section header
+        if [[ "$line" =~ ^\[([^]]+)\] ]]; then
+            if [[ "${BASH_REMATCH[1]}" == "packages" ]]; then
+                in_packages=true
+            else
+                in_packages=false
             fi
             continue
         fi
         
-        if [[ $in_section == true ]]; then
-            if [[ $line_depth -gt $section_depth ]]; then
-                section_content="$section_content$line
+        # Package entries
+        if [[ "$in_packages" == true && "$line" =~ ^([^=]+)=(.*)$ ]]; then
+            local category="${BASH_REMATCH[1]}"
+            local pkgs="${BASH_REMATCH[2]}"
+            packages="$packages$pkgs
 "
-            else
-                break
-            fi
         fi
-    done
+    done < "$PROFILE_FILE"
     
-    if [[ -n "$section_content" ]]; then
-        echo "${section_name}:"
-        echo -n "$section_content"
-    fi
+    echo "$packages"
 }
 
 get_profile_dotfiles() {
-    local dotfiles_yaml=$(echo "$PROFILE_DATA" | _yaml_extract_section_stdin "dotfiles")
-    echo "$dotfiles_yaml"
+    local dotfiles_source
+    dotfiles_source=$(ini_get "$PROFILE_FILE" "dotfiles" "source" "")
+    echo "source: $dotfiles_source"
+    
+    # Get dotfile links
+    local current_link=1
+    while true; do
+        local src
+        local dest
+        src=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "src" "")
+        dest=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "dest" "")
+        
+        if [[ -z "$src" || -z "$dest" ]]; then
+            break
+        fi
+        
+        echo "link: $src -> $dest"
+        ((current_link++))
+    done
 }
 
 get_profile_services() {
-    yaml_get_list "$PROFILE_DATA" "services"
+    ini_get_list "$PROFILE_FILE" "services" "enable"
 }
 
 get_profile_scripts() {
-    yaml_get_list "$PROFILE_DATA" "setup_scripts"
+    ini_get_list "$PROFILE_FILE" "setup_scripts" "run"
 }
 
 get_default_profile_for_platform() {
