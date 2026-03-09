@@ -288,18 +288,17 @@ Options:
     -h, --help             Show this help message
 
 Configuration:
-    Configuration is read from: backup/restic-config.yaml
+    Configuration is read from: backup/restic-config.conf
     
-    Required fields:
-    - repository: Backup repository location (e.g., b2:bucket:path)
-    - password: Repository encryption password
-    - paths: List of paths to backup
+    Required sections:
+    - [repository]: Backup repository location and password
+    - [paths]: Paths to backup (numbered entries)
     
-    Optional fields:
-    - excludes: List of patterns to exclude
-    - retention: Retention policy (keep-daily, keep-weekly, etc.)
-    - b2: B2 credentials (account_id, account_key)
-    - s3: S3 credentials (access_key, secret_key)
+    Optional sections:
+    - [excludes]: Patterns to exclude (numbered entries)
+    - [retention]: Retention policy (keep_daily, keep_weekly, etc.)
+    - [b2]: B2 credentials (account_id, account_key)
+    - [s3]: S3 credentials (access_key, secret_key, region)
 
 Examples:
     $0                     # Run backup
