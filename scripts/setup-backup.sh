@@ -3,9 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
-source "${SCRIPT_DIR}/yaml-parser.sh"
+source "${SCRIPT_DIR}/ini-parser.sh"
 
-CONFIG_FILE="${SCRIPT_DIR}/../backup/restic-config.yaml"
+CONFIG_FILE="${SCRIPT_DIR}/../backup/restic-config.conf"
 BACKUP_SCRIPT="${SCRIPT_DIR}/../backup/backup.sh"
 
 log_info() {
@@ -41,54 +41,45 @@ create_config_template() {
     
     cat > "$CONFIG_FILE" <<EOF
 # Restic Backup Configuration
-# Edit this file with your backup settings
+# Copy this file and fill in your credentials
+# This file will be encrypted by git-crypt
 
-# Repository location
-# For BackBlaze B2:
-repository: b2:your-bucket-name:machine-backup
-# For S3:
-# repository: s3:s3.amazonaws.com/your-bucket-name/machine-backup
+[repository]
+location = b2:your-bucket-name:machine-backup
+password = CHANGE_ME_STRONG_PASSWORD
 
-# Repository password (use a strong password!)
-# Store this in a password manager!
-password: ""
+[backup]
+schedule = daily
 
-# Backup schedule
-schedule: daily
+[retention]
+keep_daily = 7
+keep_weekly = 4
+keep_monthly = 12
+keep_yearly = 2
 
-# Retention policy
-retention:
-  keep-daily: 7
-  keep-weekly: 4
-  keep-monthly: 12
-  keep-yearly: 2
+[paths]
+1 = ~/dotfiles
+2 = ~/.ssh
+3 = ~/Documents
+4 = ~/Projects
 
-# Paths to backup
-paths:
-  - ~/dotfiles
-  - ~/.ssh
-  - ~/Documents
-  - ~/Projects
+[excludes]
+1 = node_modules
+2 = .git/objects
+3 = *.log
+4 = *.tmp
+5 = __pycache__
+6 = .cache
+7 = *.pyc
 
-# Paths to exclude
-excludes:
-  - node_modules
-  - .git/objects
-  - "*.log"
-  - "*.tmp"
-  - __pycache__
-  - .cache
-  - "*.pyc"
+[b2]
+account_id = YOUR_B2_ACCOUNT_ID
+account_key = YOUR_B2_ACCOUNT_KEY
 
-# B2/S3 credentials (if using B2 or S3)
-# Store these in a password manager!
-b2:
-  account_id: ""
-  account_key: ""
-
-s3:
-  access_key: ""
-  secret_key: ""
+[s3]
+access_key = YOUR_S3_ACCESS_KEY
+secret_key = YOUR_S3_SECRET_KEY
+region = us-east-1
 EOF
     
     log_success "Created backup config template at $CONFIG_FILE"
@@ -104,9 +95,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-CONFIG_FILE="${SCRIPT_DIR}/restic-config.yaml"
+CONFIG_FILE="${SCRIPT_DIR}/restic-config.conf"
 
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 
 DRY_RUN=false
 
@@ -143,16 +134,14 @@ load_config() {
         exit 1
     fi
     
-    local config_content=$(cat "$CONFIG_FILE")
-    
-    REPOSITORY=$(yaml_get "$config_content" "repository" "")
-    PASSWORD=$(yaml_get "$config_content" "password" "")
+    REPOSITORY=$(ini_get "$CONFIG_FILE" "repository" "location" "")
+    PASSWORD=$(ini_get "$CONFIG_FILE" "repository" "password" "")
     
     export RESTIC_REPOSITORY="$REPOSITORY"
     export RESTIC_PASSWORD="$PASSWORD"
     
-    B2_ACCOUNT_ID=$(yaml_get "$config_content" "b2.account_id" "")
-    B2_ACCOUNT_KEY=$(yaml_get "$config_content" "b2.account_key" "")
+    B2_ACCOUNT_ID=$(ini_get "$CONFIG_FILE" "b2" "account_id" "")
+    B2_ACCOUNT_KEY=$(ini_get "$CONFIG_FILE" "b2" "account_key" "")
     
     if [[ -n "$B2_ACCOUNT_ID" && -n "$B2_ACCOUNT_KEY" ]]; then
         export B2_ACCOUNT_ID
@@ -161,14 +150,28 @@ load_config() {
 }
 
 run_backup() {
-    local config_content=$(cat "$CONFIG_FILE")
-    local paths=$(yaml_get_list "$config_content" "paths")
-    local excludes=$(yaml_get_list "$config_content" "excludes")
+    local paths=""
+    local current_path=1
+    while true; do
+        local path=$(ini_get "$CONFIG_FILE" "paths" "$current_path" "")
+        if [[ -z "$path" ]]; then
+            break
+        fi
+        paths="$paths $path"
+        ((current_path++))
+    done
+    paths=$(echo "$paths" | xargs)
     
-    local exclude_args=""
-    while IFS= read -r exclude; do
-        [[ -n "$exclude" ]] && exclude_args="$exclude_args --exclude $exclude"
-    done <<< "$excludes"
+    local excludes=""
+    local current_exclude=1
+    while true; do
+        local exclude=$(ini_get "$CONFIG_FILE" "excludes" "$current_exclude" "")
+        if [[ -z "$exclude" ]]; then
+            break
+        fi
+        excludes="$excludes --exclude $exclude"
+        ((current_exclude++))
+    done
     
     if [[ "$DRY_RUN" == true ]]; then
         log_info "Dry run - would backup:"
@@ -179,14 +182,14 @@ run_backup() {
     
     log_info "Starting backup..."
     
-    restic backup $paths $exclude_args
+    restic backup $paths $excludes
     
     log_success "Backup complete!"
     
     log_info "Running retention policy..."
-    local keep_daily=$(yaml_get "$config_content" "retention.keep-daily" "7")
-    local keep_weekly=$(yaml_get "$config_content" "retention.keep-weekly" "4")
-    local keep_monthly=$(yaml_get "$config_content" "retention.keep-monthly" "12")
+    local keep_daily=$(ini_get "$CONFIG_FILE" "retention" "keep_daily" "7")
+    local keep_weekly=$(ini_get "$CONFIG_FILE" "retention" "keep_weekly" "4")
+    local keep_monthly=$(ini_get "$CONFIG_FILE" "retention" "keep_monthly" "12")
     
     restic forget \
         --keep-daily "$keep_daily" \

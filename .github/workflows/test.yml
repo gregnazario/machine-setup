@@ -17,22 +17,29 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck yamllint
+          sudo apt-get install -y shellcheck
         
-      - name: Validate YAML files
+      - name: Validate YAML workflow files
         run: |
-          find . -name "*.yaml" -o -name "*.yml" | grep -v ".git" | xargs yamllint -d relaxed
+          if find .github/workflows -name "*.yml" -o -name "*.yaml" | grep -q .; then
+            find .github/workflows -name "*.yml" -o -name "*.yaml" | xargs python3 -c "import sys, yaml; [yaml.safe_load(open(f)) for f in sys.argv[1:]]"
+          fi
           
       - name: Shellcheck scripts
         run: |
           find scripts/ -name "*.sh" | xargs shellcheck -x
           shellcheck setup.sh
       
-      - name: Validate JSON-like YAML
+      - name: Validate INI config files
         run: |
-          for file in packages/**/*.yaml profiles/*.yaml; do
-            echo "Validating $file"
-            python3 -c "import yaml; yaml.safe_load(open('$file'))"
+          for file in packages/*.conf packages/platforms/*.conf profiles/*.conf backup/*.conf; do
+            if [[ -f "$file" ]]; then
+              echo "Validating $file"
+              if ! grep -qE "^\[" "$file"; then
+                echo "Error: No sections found in $file"
+                exit 1
+              fi
+            fi
           done
 
   test-platform-detection:

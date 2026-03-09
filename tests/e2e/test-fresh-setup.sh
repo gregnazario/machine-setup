@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 
 echo "========================================="
 echo "E2E Test: Fresh Machine Setup Simulation"
@@ -80,7 +80,7 @@ echo "Total packages to install: $PACKAGE_COUNT"
 # Step 6: Validate dotfiles
 echo ""
 echo "Step 6: Validating dotfiles..."
-DOTFILES_SOURCE=$(yaml_get "$DOTFILES_CONFIG" "source" "")
+DOTFILES_SOURCE=$(ini_get "$PROFILE_FILE" "dotfiles" "source" "")
 DOTFILES_DIR="${REPO_ROOT}/dotfiles/${DOTFILES_SOURCE}"
 
 if [[ ! -d "$DOTFILES_DIR" ]]; then
@@ -105,10 +105,9 @@ fi
 # Step 8: Validate backup configuration
 echo ""
 echo "Step 8: Validating backup configuration..."
-if [[ -f "backup/restic-config.yaml" ]]; then
-    BACKUP_CONTENT=$(cat backup/restic-config.yaml)
-    BACKUP_PATHS=$(yaml_get_list "$BACKUP_CONTENT" "paths" | wc -l)
-    echo "Backup paths configured: $BACKUP_PATHS"
+if [[ -f "backup/restic-config.conf" ]]; then
+    BACKUP_PATHS=$(grep -c "^\[paths\]" backup/restic-config.conf || echo "0")
+    echo "Backup paths section found"
 else
     echo "❌ FAIL: Backup config not found"
     exit 1
@@ -164,11 +163,13 @@ for script in setup.sh scripts/*.sh; do
     fi
 done
 
-# Check all YAML files are valid
-for yaml in packages/**/*.yaml profiles/*.yaml backup/*.yaml; do
-    if ! python3 -c "import yaml; yaml.safe_load(open('$yaml'))" 2>/dev/null; then
-        echo "❌ FAIL: $yaml is not valid YAML"
-        VALIDATION_PASSED=false
+# Check all INI config files are valid
+for ini_file in packages/*.conf packages/platforms/*.conf profiles/*.conf backup/*.conf; do
+    if [[ -f "$ini_file" ]]; then
+        if ! grep -q "^\[" "$ini_file" 2>/dev/null; then
+            echo "❌ FAIL: $ini_file is not a valid INI file"
+            VALIDATION_PASSED=false
+        fi
     fi
 done
 

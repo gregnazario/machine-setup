@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
 source "${SCRIPT_DIR}/profile-loader.sh"
-source "${SCRIPT_DIR}/yaml-parser.sh"
+source "${SCRIPT_DIR}/ini-parser.sh"
 
 PROFILE=""
 DRY_RUN=false
@@ -85,8 +85,7 @@ create_symlink() {
 }
 
 link_dotfiles() {
-    local dotfiles_config=$(get_profile_dotfiles)
-    local dotfiles_source=$(yaml_get "$dotfiles_config" "source" "")
+    local dotfiles_source=$(ini_get "$PROFILE_FILE" "dotfiles" "source" "")
     local dotfiles_dir="${SCRIPT_DIR}/../dotfiles/${dotfiles_source}"
     
     if [[ ! -d "$dotfiles_dir" ]]; then
@@ -96,13 +95,14 @@ link_dotfiles() {
     
     log_info "Linking dotfiles from: $dotfiles_dir"
     
-    local links=$(yaml_get_objects "$dotfiles_config" "links")
-    
-    while IFS= read -r link; do
-        [[ -z "$link" ]] && continue
+    local current_link=1
+    while true; do
+        local src=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "src" "")
+        local dest=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "dest" "")
         
-        local src=$(yaml_object_get "$link" "src")
-        local dest=$(yaml_object_get "$link" "dest")
+        if [[ -z "$src" || -z "$dest" ]]; then
+            break
+        fi
         
         src="${src/#\~/$HOME}"
         dest="${dest/#\~/$HOME}"
@@ -115,7 +115,9 @@ link_dotfiles() {
         else
             log_warn "Source not found: $full_source"
         fi
-    done <<< "$links"
+        
+        ((current_link++))
+    done
 }
 
 main() {

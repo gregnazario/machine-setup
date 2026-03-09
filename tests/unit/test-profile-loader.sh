@@ -13,7 +13,7 @@ echo "Testing profile loader for profile: $PROFILE"
 
 # Source the profile loader
 source "${REPO_ROOT}/scripts/platform-detect.sh"
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 source "${REPO_ROOT}/scripts/profile-loader.sh"
 
 # Test profile loading
@@ -45,14 +45,14 @@ if [[ -z "$DOTFILES" || "$DOTFILES" == "null" ]]; then
 fi
 
 # Check for required fields
-NAME=$(yaml_get "$PROFILE_DATA" "name" "")
-if [[ -z "$NAME" || "$NAME" == "null" ]]; then
+NAME=$(ini_get "$PROFILE_FILE" "profile" "name" "")
+if [[ -z "$NAME" ]]; then
     echo "❌ FAIL: Profile missing 'name' field"
     exit 1
 fi
 
-DESCRIPTION=$(yaml_get "$PROFILE_DATA" "description" "")
-if [[ -z "$DESCRIPTION" || "$DESCRIPTION" == "null" ]]; then
+DESCRIPTION=$(ini_get "$PROFILE_FILE" "profile" "description" "")
+if [[ -z "$DESCRIPTION" ]]; then
     echo "❌ FAIL: Profile missing 'description' field"
     exit 1
 fi

@@ -12,15 +12,14 @@ PROFILE="${1:-minimal}"
 echo "Testing dotfiles linking for profile: $PROFILE"
 
 source "${REPO_ROOT}/scripts/platform-detect.sh"
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 source "${REPO_ROOT}/scripts/profile-loader.sh"
 
 detect_platform
 load_profile "$PROFILE"
 
 # Get dotfiles configuration
-DOTFILES_CONFIG=$(get_profile_dotfiles)
-DOTFILES_SOURCE=$(yaml_get "$DOTFILES_CONFIG" "source" "")
+DOTFILES_SOURCE=$(ini_get "$PROFILE_FILE" "dotfiles" "source" "")
 DOTFILES_DIR="${REPO_ROOT}/dotfiles/${DOTFILES_SOURCE}"
 
 if [[ ! -d "$DOTFILES_DIR" ]]; then

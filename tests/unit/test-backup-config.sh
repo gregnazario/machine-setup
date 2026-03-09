@@ -7,11 +7,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 
 echo "Testing backup configuration"
 
-BACKUP_CONFIG="${REPO_ROOT}/backup/restic-config.yaml"
+BACKUP_CONFIG="${REPO_ROOT}/backup/restic-config.conf"
 BACKUP_SCRIPT="${REPO_ROOT}/backup/backup.sh"
 
 # Check that backup config exists
@@ -20,30 +20,28 @@ if [[ ! -f "$BACKUP_CONFIG" ]]; then
     exit 1
 fi
 
-# Validate backup config YAML
-CONFIG_CONTENT=$(cat "$BACKUP_CONFIG")
-
 # Check required fields
-REPO=$(yaml_get "$CONFIG_CONTENT" "repository" "")
-if [[ -z "$REPO" || "$REPO" == "null" ]]; then
-    echo "❌ FAIL: Backup config missing 'repository'"
+REPO=$(ini_get "$BACKUP_CONFIG" "repository" "location" "")
+if [[ -z "$REPO" ]]; then
+    echo "❌ FAIL: Backup config missing 'repository location'"
     exit 1
 fi
 
-PASSWORD=$(yaml_get "$CONFIG_CONTENT" "password" "")
-if [[ -z "$PASSWORD" || "$PASSWORD" == "null" ]]; then
+PASSWORD=$(ini_get "$BACKUP_CONFIG" "repository" "password" "")
+if [[ -z "$PASSWORD" ]]; then
     echo "❌ FAIL: Backup config missing 'password'"
     exit 1
 fi
 
-RETENTION=$(yaml_get "$CONFIG_CONTENT" "retention" "")
-if [[ -z "$RETENTION" || "$RETENTION" == "null" ]]; then
-    echo "❌ FAIL: Backup config missing 'retention'"
+KEEP_DAILY=$(ini_get "$BACKUP_CONFIG" "retention" "keep_daily" "")
+if [[ -z "$KEEP_DAILY" ]]; then
+    echo "❌ FAIL: Backup config missing 'retention' settings"
     exit 1
 fi
 
-PATHS=$(yaml_get_list "$CONFIG_CONTENT" "paths")
-if [[ -z "$PATHS" ]]; then
+# Check paths (numbered keys)
+FIRST_PATH=$(ini_get "$BACKUP_CONFIG" "paths" "1" "")
+if [[ -z "$FIRST_PATH" ]]; then
     echo "❌ FAIL: Backup config missing 'paths'"
     exit 1
 fi

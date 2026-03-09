@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 
 echo "Running macOS integration test"
 
@@ -73,22 +73,21 @@ fi
 echo "✅ Package collection: $(echo "$PACKAGES" | wc -w) packages"
 
 # Test platform-specific packages
-MACOS_PACKAGES="${REPO_ROOT}/packages/platforms/macos.yaml"
+MACOS_PACKAGES="${REPO_ROOT}/packages/platforms/macos.conf"
 if [[ ! -f "$MACOS_PACKAGES" ]]; then
     echo "❌ FAIL: macOS platform packages file not found"
     exit 1
 fi
 
 # Check for macOS-specific configurations
-MACOS_CONTENT=$(cat "$MACOS_PACKAGES")
-HOMEBREW_TAPS=$(yaml_get_list "$MACOS_CONTENT" "homebrew_taps")
+HOMEBREW_TAPS=$(ini_get "$MACOS_PACKAGES" "platform" "homebrew_taps" "")
 if [[ -n "$HOMEBREW_TAPS" ]]; then
-    echo "✅ Homebrew taps configured: $(echo "$HOMEBREW_TAPS" | head -1)"
+    echo "✅ Homebrew taps configured: $HOMEBREW_TAPS"
 fi
 
 # Check for OrbStack (Docker alternative for macOS)
-PLATFORM_SPECIFIC=$(yaml_get_list "$MACOS_CONTENT" "platform_specific")
-if echo "$PLATFORM_SPECIFIC" | grep -q "orbstack"; then
+ORBSTACK=$(ini_get "$MACOS_PACKAGES" "platform_specific" "orbstack" "")
+if [[ -n "$ORBSTACK" ]]; then
     echo "✅ OrbStack configured for macOS"
 fi
 

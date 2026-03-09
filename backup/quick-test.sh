@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 
 echo "==================================="
 echo "Restic Backup Quick Example"
@@ -37,7 +37,7 @@ echo "✅ Restic is installed: $(restic version)"
 echo ""
 
 # Check configuration
-CONFIG_FILE="backup/restic-config.yaml"
+CONFIG_FILE="backup/restic-config.conf"
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "❌ Configuration file not found: $CONFIG_FILE"
     echo ""
@@ -48,15 +48,14 @@ fi
 echo "✅ Configuration file found"
 echo ""
 
-CONFIG_CONTENT=$(cat "$CONFIG_FILE")
-
 # Check if password is set
-PASSWORD=$(yaml_get "$CONFIG_CONTENT" "password" "")
+PASSWORD=$(ini_get "$CONFIG_FILE" "repository" "password" "")
 if [[ "$PASSWORD" == "CHANGE_ME_STRONG_PASSWORD" || -z "$PASSWORD" ]]; then
     echo "⚠️  Please set a strong password in $CONFIG_FILE"
     echo ""
     echo "Edit the file and update:"
-    echo "  password: \"your-strong-password-here\""
+    echo "  [repository]"
+    echo "  password = your-strong-password-here"
     echo ""
     exit 1
 fi
@@ -65,15 +64,17 @@ echo "✅ Password is configured"
 echo ""
 
 # Check if repository is set
-REPOSITORY=$(yaml_get "$CONFIG_CONTENT" "repository" "")
+REPOSITORY=$(ini_get "$CONFIG_FILE" "repository" "location" "")
 if [[ -z "$REPOSITORY" || "$REPOSITORY" == "null" ]]; then
     echo "⚠️  Please configure your repository in $CONFIG_FILE"
     echo ""
     echo "For BackBlaze B2:"
-    echo "  repository: b2:your-bucket-name:machine-backup"
+    echo "  [repository]"
+    echo "  location = b2:your-bucket-name:machine-backup"
     echo ""
     echo "For S3:"
-    echo "  repository: s3:https://s3.example.com/bucket/backup"
+    echo "  [repository]"
+    echo "  location = s3:https://s3.example.com/bucket/backup"
     echo ""
     exit 1
 fi
@@ -83,26 +84,26 @@ echo ""
 
 # Check credentials based on repository type
 if [[ "$REPOSITORY" == b2:* ]]; then
-    B2_ID=$(yaml_get "$CONFIG_CONTENT" "b2.account_id" "")
+    B2_ID=$(ini_get "$CONFIG_FILE" "b2" "account_id" "")
     if [[ "$B2_ID" == "YOUR_B2_ACCOUNT_ID" || -z "$B2_ID" ]]; then
         echo "⚠️  Please configure B2 credentials in $CONFIG_FILE"
         echo ""
-        echo "  b2:"
-        echo "    account_id: \"your-account-id\""
-        echo "    account_key: \"your-account-key\""
+        echo "  [b2]"
+        echo "  account_id = your-account-id"
+        echo "  account_key = your-account-key"
         echo ""
         exit 1
     fi
     echo "✅ B2 credentials are configured"
     echo ""
 elif [[ "$REPOSITORY" == s3:* ]]; then
-    S3_KEY=$(yaml_get "$CONFIG_CONTENT" "s3.access_key" "")
+    S3_KEY=$(ini_get "$CONFIG_FILE" "s3" "access_key" "")
     if [[ "$S3_KEY" == "YOUR_S3_ACCESS_KEY" || -z "$S3_KEY" ]]; then
         echo "⚠️  Please configure S3 credentials in $CONFIG_FILE"
         echo ""
-        echo "  s3:"
-        echo "    access_key: \"your-access-key\""
-        echo "    secret_key: \"your-secret-key\""
+        echo "  [s3]"
+        echo "  access_key = your-access-key"
+        echo "  secret_key = your-secret-key"
         echo ""
         exit 1
     fi
