@@ -2,16 +2,16 @@
 set -euo pipefail
 
 # Restic Backup Script
-# Reads configuration from backup/restic-config.yaml and performs automated backups
+# Reads configuration from backup/restic-config.conf and performs automated backups
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-CONFIG_FILE="${REPO_ROOT}/backup/restic-config.yaml"
+CONFIG_FILE="${REPO_ROOT}/backup/restic-config.conf"
 LOG_FILE="${HOME}/backup.log"
 DRY_RUN=false
 VERBOSE=false
 
-source "${REPO_ROOT}/scripts/yaml-parser.sh"
+source "${REPO_ROOT}/scripts/ini-parser.sh"
 
 log_info() {
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
@@ -43,35 +43,62 @@ check_dependencies() {
 load_config() {
     if [[ ! -f "$CONFIG_FILE" ]]; then
         log_error "Configuration file not found: $CONFIG_FILE"
-        log_error "Please create restic-config.yaml with your backup settings"
+        log_error "Please create restic-config.conf with your backup settings"
         exit 1
     fi
     
-    local config_content=$(cat "$CONFIG_FILE")
+    REPOSITORY=$(ini_get "$CONFIG_FILE" "repository" "location" "")
+    PASSWORD=$(ini_get "$CONFIG_FILE" "repository" "password" "")
     
-    REPOSITORY=$(yaml_get "$config_content" "repository" "")
-    PASSWORD=$(yaml_get "$config_content" "password" "")
+    # Read backup paths
+    PATHS=""
+    local current=1
+    while true; do
+        local path
+        path=$(ini_get "$CONFIG_FILE" "paths" "$current" "")
+        if [[ -z "$path" ]]; then
+            break
+        fi
+        PATHS="$PATHS$path
+"
+        ((current++))
+    done
+    PATHS=$(echo "$PATHS" | sed "s|~|$HOME|g")
     
-    PATHS=$(yaml_get_list "$config_content" "paths" | sed "s|~|$HOME|g")
-    EXCLUDES=$(yaml_get_list "$config_content" "excludes")
+    # Read excludes
+    EXCLUDES=""
+    current=1
+    while true; do
+        local exclude
+        exclude=$(ini_get "$CONFIG_FILE" "excludes" "$current" "")
+        if [[ -z "$exclude" ]]; then
+            break
+        fi
+        EXCLUDES="$EXCLUDES$exclude
+"
+        ((current++))
+    done
     
-    KEEP_DAILY=$(yaml_get "$config_content" "retention.keep-daily" "7")
-    KEEP_WEEKLY=$(yaml_get "$config_content" "retention.keep-weekly" "4")
-    KEEP_MONTHLY=$(yaml_get "$config_content" "retention.keep-monthly" "12")
-    KEEP_YEARLY=$(yaml_get "$config_content" "retention.keep-yearly" "2")
+    # Retention policy
+    KEEP_DAILY=$(ini_get "$CONFIG_FILE" "retention" "keep_daily" "7")
+    KEEP_WEEKLY=$(ini_get "$CONFIG_FILE" "retention" "keep_weekly" "4")
+    KEEP_MONTHLY=$(ini_get "$CONFIG_FILE" "retention" "keep_monthly" "12")
+    KEEP_YEARLY=$(ini_get "$CONFIG_FILE" "retention" "keep_yearly" "2")
     
-    B2_ACCOUNT_ID=$(yaml_get "$config_content" "b2.account_id" "")
-    B2_ACCOUNT_KEY=$(yaml_get "$config_content" "b2.account_key" "")
+    # B2 credentials
+    B2_ACCOUNT_ID=$(ini_get "$CONFIG_FILE" "b2" "account_id" "")
+    B2_ACCOUNT_KEY=$(ini_get "$CONFIG_FILE" "b2" "account_key" "")
     
-    S3_ACCESS_KEY=$(yaml_get "$config_content" "s3.access_key" "")
-    S3_SECRET_KEY=$(yaml_get "$config_content" "s3.secret_key" "")
+    # S3 credentials
+    S3_ACCESS_KEY=$(ini_get "$CONFIG_FILE" "s3" "access_key" "")
+    S3_SECRET_KEY=$(ini_get "$CONFIG_FILE" "s3" "secret_key" "")
     
-    if [[ -z "$REPOSITORY" || "$REPOSITORY" == "null" ]]; then
+    if [[ -z "$REPOSITORY" ]]; then
         log_error "Repository not configured in $CONFIG_FILE"
         exit 1
     fi
     
-    if [[ -z "$PASSWORD" || "$PASSWORD" == "null" || "$PASSWORD" == "CHANGE_ME_STRONG_PASSWORD" ]]; then
+    if [[ -z "$PASSWORD" || "$PASSWORD" == "CHANGE_ME_STRONG_PASSWORD" ]]; then
         log_error "Please set a strong password in $CONFIG_FILE"
         exit 1
     fi
