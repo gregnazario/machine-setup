@@ -15,12 +15,12 @@ This backup system uses Restic to create encrypted, deduplicated backups to:
 
 ## Quick Start
 
-1. Configure your credentials in `backup/restic-config.yaml`:
+1. Configure your credentials in `backup/restic-config.conf`:
 
    ```bash
    cd backup
-   cp restic-config.yaml restic-config.yaml.backup
-   vi restic-config.yaml
+   cp restic-config.conf restic-config.conf.backup
+   vi restic-config.conf
    ```
 
 2. Set required fields:
@@ -198,50 +198,56 @@ restic -r b2:bucket:path mount /mnt/restic
 
 ### Required Fields
 
-```yaml
-repository: b2:your-bucket:machine-backup
-password: "strong-encryption-password"
-paths:
-  - ~/Documents
-  - ~/Projects
+```ini
+[repository]
+location = b2:your-bucket:machine-backup
+password = strong-encryption-password
+
+[paths]
+1 = ~/Documents
+2 = ~/Projects
 ```
 
 ### Retention Policy
 
-```yaml
-retention:
-  keep-daily: 7      # Keep 7 daily backups
-  keep-weekly: 4     # Keep 4 weekly backups
-  keep-monthly: 12   # Keep 12 monthly backups
-  keep-yearly: 2     # Keep 2 yearly backups
+```ini
+[retention]
+keep_daily = 7      # Keep 7 daily backups
+keep_weekly = 4     # Keep 4 weekly backups
+keep_monthly = 12   # Keep 12 monthly backups
+keep_yearly = 2     # Keep 2 yearly backups
 ```
 
 ### Excludes
 
-```yaml
-excludes:
-  - node_modules     # Exclude by name
-  - "*.log"          # Exclude by pattern
-  - .cache           # Exclude cache directories
+```ini
+[excludes]
+1 = node_modules     # Exclude by name
+2 = *.log            # Exclude by pattern
+3 = .cache           # Exclude cache directories
 ```
 
 ### BackBlaze B2
 
-```yaml
-repository: b2:your-bucket-name:backup-path
-b2:
-  account_id: "your-account-id"
-  account_key: "your-account-key"
+```ini
+[repository]
+location = b2:your-bucket-name:backup-path
+
+[b2]
+account_id = your-account-id
+account_key = your-account-key
 ```
 
 ### S3-Compatible Storage
 
-```yaml
-repository: s3:https://s3.example.com/bucket/backup-path
-s3:
-  access_key: "your-access-key"
-  secret_key: "your-secret-key"
-  region: "us-east-1"  # Optional
+```ini
+[repository]
+location = s3:https://s3.example.com/bucket/backup-path
+
+[s3]
+access_key = your-access-key
+secret_key = your-secret-key
+region = us-east-1  # Optional
 ```
 
 ## Security Notes
@@ -280,7 +286,7 @@ chmod +x backup/backup.sh
 ```
 
 ### Path Not Found
-Verify paths in `restic-config.yaml` exist. Non-existent paths are skipped with a warning.
+Verify paths in `restic-config.conf` exist. Non-existent paths are skipped with a warning.
 
 ### B2/S3 Connection Failed
 - Verify your credentials are correct
@@ -319,9 +325,9 @@ build/
 Create separate config files:
 ```bash
 backup/
-├── restic-config.yaml       # Main backup
-├── restic-config-media.yaml # Media backup
-└── restic-config-code.yaml  # Code backup
+├── restic-config.conf       # Main backup
+├── restic-config-media.conf # Media backup
+└── restic-config-code.conf  # Code backup
 ```
 
 ### Pre/Post Scripts

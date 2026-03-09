@@ -6,8 +6,6 @@ source "${SCRIPT_DIR}/platform-detect.sh"
 source "${SCRIPT_DIR}/profile-loader.sh"
 source "${SCRIPT_DIR}/ini-parser.sh"
 
-source "${SCRIPT_DIR}/ini-parser.sh"
-
 PROFILE=""
 DRY_RUN=false
 
@@ -209,27 +207,24 @@ collect_packages() {
     profile_packages=$(get_profile_packages)
     
     while IFS= read -r line; do
-        if [[ "$line" =~ ^[[:space:]]*-[[:space:]](.+)$ ]]; then
-            local package="${BASH_REMATCH[1]}"
-            mapped_package=$(get_mapped_package_name "$package")
-            packages="$packages $mapped_package"
+        if [[ -n "$line" ]]; then
+            for package in $line; do
+                mapped_package=$(get_mapped_package_name "$package")
+                packages="$packages $mapped_package"
+            done
         fi
     done <<< "$profile_packages"
     
     local platform_file="${SCRIPT_DIR}/../packages/platforms/${PLATFORM}.conf"
     if [[ -f "$platform_file" ]]; then
-        local platform_content
         local platform_packages
         
-        platform_content=$(cat "$platform_file")
-        platform_packages=$(ini_get "$platform_content" "packages.base" "")
+        platform_packages=$(ini_get "$platform_file" "packages.base" "packages" "")
         
         if [[ -n "$platform_packages" ]]; then
-            while IFS= read -r package; do
-                if [[ -n "$package" ]]; then
-                    packages="$packages $package"
-                fi
-            done <<< "$platform_packages"
+            for package in $platform_packages; do
+                packages="$packages $package"
+            done
         fi
     fi
     

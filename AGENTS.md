@@ -73,7 +73,7 @@ The `profile-loader.sh` merges INI configurations using pure bash.
 Some packages have different names on different platforms:
 
 ```yaml
-# packages/common.yaml
+# packages/common.conf
 package_mapping:
   fd-find:
     ubuntu: fd-find
@@ -186,7 +186,7 @@ Files matching patterns in `dotfiles/.gitattributes` are automatically encrypted
 - `**/.ssh/id_*` - SSH private keys
 - `**/*.gpg` - GPG keys
 - `**/api-tokens/**` - API tokens
-- `backup/restic-config.yaml` - Backup credentials
+- `backup/restic-config.conf` - Backup credentials
 
 **Important**: When working with secrets:
 1. Never commit unencrypted secrets
@@ -197,13 +197,13 @@ Files matching patterns in `dotfiles/.gitattributes` are automatically encrypted
 
 ### Adding a New Package
 
-1. Add to `packages/common.yaml` under appropriate category
+1. Add to `packages/common.conf` under appropriate category
 2. If package has different names, add to `package_mapping` section
 3. Test with `./setup.sh --dry-run`
 
 ### Creating a New Profile
 
-1. Create `profiles/my-profile.yaml`
+1. Create `profiles/my-profile.conf`
 2. Set `extends: minimal` or `extends: full`
 3. Add packages, dotfiles, services
 4. Create dotfiles in `dotfiles/profiles/my-profile/`
@@ -211,7 +211,7 @@ Files matching patterns in `dotfiles/.gitattributes` are automatically encrypted
 
 ### Supporting a New Platform
 
-1. Create `packages/platforms/newplatform.yaml`
+1. Create `packages/platforms/newplatform.conf`
 2. Add platform detection logic to `scripts/platform-detect.sh`
 3. Add package installation function to `scripts/install-packages.sh`
 4. Test on the target platform
@@ -288,7 +288,7 @@ When making changes, verify:
 **Symptoms**: Package manager errors
 
 **Solution**:
-1. Check package name mapping in `common.yaml`
+1. Check package name mapping in `common.conf`
 2. Verify repository is enabled (for third-party repos)
 3. Check platform-specific package file for repo configuration
 4. Try installing package manually with detected package manager
