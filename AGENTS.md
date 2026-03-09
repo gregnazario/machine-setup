@@ -16,12 +16,12 @@ This is a **cross-platform machine configuration and syncing system** that:
 ### Core Components
 
 1. **Package Management** (`packages/`)
-   - `common.yaml`: Universal package definitions with metadata
-   - `platforms/*.yaml`: Platform-specific packages and configurations
+   - `common.conf`: Universal package definitions with metadata
+   - `platforms/*.conf`: Platform-specific packages and configurations
    - Package mapping system handles different package names across platforms
 
 2. **Profile System** (`profiles/`)
-   - YAML-based configurations with inheritance
+   - INI-based configurations with inheritance
    - Controls: packages, dotfiles, services, setup scripts
    - Extensible - users can create custom profiles
 
@@ -57,15 +57,16 @@ echo $PACKAGE_MANAGER  # e.g., "dnf", "apt", "homebrew"
 
 ### Profile Inheritance
 
-Profiles can extend other profiles:
-```yaml
-extends: minimal  # Inherit everything from minimal
-packages:
-  extra:  # Add to inherited packages
-    - additional-tool
+Profiles can extend other profiles using INI format:
+```ini
+[profile]
+extends = minimal
+
+[packages]
+extra = additional-tool
 ```
 
-The `profile-loader.sh` merges YAML configurations using `yq`.
+The `profile-loader.sh` merges INI configurations using pure bash.
 
 ### Package Mapping
 
@@ -98,10 +99,10 @@ Existing files are backed up with timestamps before linking.
 
 | File | Purpose |
 |------|---------|
-| `packages/common.yaml` | Universal package definitions |
-| `packages/platforms/*.yaml` | Platform-specific packages |
-| `profiles/*.yaml` | Profile definitions |
-| `backup/restic-config.yaml` | Backup configuration (git-crypt encrypted) |
+| `packages/common.conf` | Universal package definitions |
+| `packages/platforms/*.conf` | Platform-specific packages |
+| `profiles/*.conf` | Profile definitions |
+| `backup/restic-config.conf` | Backup configuration (git-crypt encrypted) |
 | `dotfiles/.gitattributes` | git-crypt encryption rules |
 
 ### Scripts
@@ -110,7 +111,7 @@ Existing files are backed up with timestamps before linking.
 |--------|---------|
 | `setup.sh` | Main entry point, orchestrates setup |
 | `scripts/platform-detect.sh` | OS detection |
-| `scripts/profile-loader.sh` | Profile loading and YAML merging |
+| `scripts/profile-loader.sh` | Profile loading and INI merging |
 | `scripts/install-packages.sh` | Install packages using detected package manager |
 | `scripts/link-dotfiles.sh` | Create symlinks from dotfiles |
 | `scripts/setup-syncthing.sh` | Configure Syncthing |
@@ -264,8 +265,6 @@ When making changes, verify:
 ### Required
 - `bash` (4.0+)
 - `git`
-- `yq` (YAML processor) - auto-installed if missing
-- `curl` or `wget`
 
 ### Optional (installed by setup)
 - `git-crypt` - for secrets encryption
@@ -319,10 +318,10 @@ When making changes, verify:
 **Symptoms**: Restic can't connect to B2/S3
 
 **Solution**:
-1. Verify credentials in `backup/restic-config.yaml`
+1. Verify credentials in `backup/restic-config.conf`
 2. Check bucket exists and is accessible
 3. Test credentials with `b2 authorize-account` or `aws s3 ls`
-4. Ensure `restic-config.yaml` is not encrypted (unlock git-crypt first)
+4. Ensure `restic-config.conf` is not encrypted (unlock git-crypt first)
 
 ## Code Style Guidelines
 
@@ -334,11 +333,11 @@ When making changes, verify:
 - Use functions for reusable code
 - Add logging functions: `log_info`, `log_error`, etc.
 
-### YAML Files
+### INI Files
 - Use 2 spaces for indentation
 - Include descriptions for packages
 - Group related items with comments
-- Validate with `yq` before committing
+- Validate format before committing
 
 ### Documentation
 - Keep README.md user-focused

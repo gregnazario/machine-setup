@@ -9,7 +9,7 @@ Cross-platform machine configuration and syncing system with profile-based packa
 - **Dotfiles Sync**: Real-time synchronization via Syncthing
 - **Secrets Management**: Encrypted secrets with git-crypt
 - **Automated Backups**: Daily encrypted backups with Restic to BackBlaze B2 or S3
-- **Package Management**: Unified YAML-based package definitions
+- **Package Management**: Unified INI-based package definitions
 
 ## Quick Start
 
@@ -73,28 +73,29 @@ Complete development environment with all tools and utilities.
 ### Custom Profiles
 Create your own profiles in `profiles/` directory:
 
-```yaml
-# profiles/my-custom.yaml
-name: my-custom
-description: My custom setup
-extends: minimal  # or full
+```ini
+; profiles/my-custom.conf
+[profile]
+name = my-custom
+description = My custom setup
+extends = minimal
 
-packages:
-  extra:
-    - my-favorite-tool
-    - another-tool
+[packages]
+extra = my-favorite-tool
+extra = another-tool
 
-dotfiles:
-  source: profiles/custom/
-  links:
-    - src: .config/myapp/
-      dest: ~/.config/myapp/
+[dotfiles]
+source = profiles/custom/
 
-services:
-  - myservice
+[dotfiles.links.1]
+src = .config/myapp/
+dest = ~/.config/myapp/
 
-setup_scripts:
-  - scripts/setup-myapp.sh
+[services]
+enable = myservice
+
+[setup_scripts]
+run = scripts/setup-myapp.sh
 ```
 
 Then run:
@@ -151,12 +152,12 @@ Then run:
 machine-setup/
 ├── setup.sh                   # Main setup script
 ├── packages/                  # Package definitions
-│   ├── common.yaml           # Universal packages
+│   ├── common.conf           # Universal packages
 │   ├── platforms/            # Platform-specific packages
-│   └── custom.yaml.example   # Custom package template
+│   └── custom.conf.example   # Custom package template
 ├── profiles/                  # Profile definitions
-│   ├── minimal.yaml
-│   ├── full.yaml
+│   ├── minimal.conf
+│   ├── full.conf
 │   └── *.example             # Example custom profiles
 ├── dotfiles/                  # Configuration files
 │   ├── profiles/             # Profile-specific dotfiles
@@ -255,7 +256,7 @@ The following are automatically encrypted:
 - `**/*.gpg` - GPG keys
 - `**/api-tokens/**` - API tokens
 - `**/.env*` - Environment files
-- `backup/restic-config.yaml` - Backup credentials
+- `backup/restic-config.conf` - Backup credentials
 
 ## Backup Strategy
 
@@ -266,7 +267,7 @@ The following are automatically encrypted:
    ./scripts/setup-backup.sh
    ```
 
-2. Edit `backup/restic-config.yaml` with your credentials:
+2. Edit `backup/restic-config.conf` with your credentials:
    ```yaml
    repository: b2:your-bucket-name:machine-backup
    password: "your-strong-password"
@@ -304,7 +305,7 @@ restic restore <snapshot-id> --target /tmp/restore --include /path/to/file
 
 ### Adding Packages
 
-Edit `packages/custom.yaml`:
+Edit `packages/custom.conf`:
 ```yaml
 packages:
   extra:
@@ -320,20 +321,20 @@ Then run:
 ### Platform-Specific Packages
 
 Each platform has its own package file in `packages/platforms/`:
-- `macos.yaml`
-- `fedora.yaml`
-- `ubuntu.yaml`
-- `debian.yaml`
-- `gentoo.yaml`
-- `void.yaml`
-- `arch.yaml`
-- `alpine.yaml`
-- `opensuse.yaml`
-- `rocky.yaml`
-- `alma.yaml`
-- `freebsd.yaml`
-- `raspberrypios.yaml`
-- `windows.yaml`
+- `macos.conf`
+- `fedora.conf`
+- `ubuntu.conf`
+- `debian.conf`
+- `gentoo.conf`
+- `void.conf`
+- `arch.conf`
+- `alpine.conf`
+- `opensuse.conf`
+- `rocky.conf`
+- `alma.conf`
+- `freebsd.conf`
+- `raspberrypios.conf`
+- `windows.conf`
 
 ## Customization
 
@@ -341,7 +342,7 @@ Each platform has its own package file in `packages/platforms/`:
 
 1. Create a new profile file:
    ```bash
-   cp profiles/server.yaml.example profiles/my-server.yaml
+   cp profiles/server.conf.example profiles/my-server.conf
    ```
 
 2. Edit the profile:
@@ -381,11 +382,20 @@ For platform-specific customizations, edit the appropriate file:
 
 ## Troubleshooting
 
-### yq not found
-```bash
-# Install yq
-sudo wget https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -O /usr/local/bin/yq
-sudo chmod +x /usr/local/bin/yq
+### Configuration Format
+This project uses **INI format** for all configuration files (no external dependencies required).
+
+```ini
+# Example: profiles/minimal.conf
+[profile]
+name = minimal
+description = Essential CLI tools only
+extends = false
+
+[packages]
+shell = nushell
+editors = neovim
+cli_essential = ripgrep fd-find fzf
 ```
 
 ### git-crypt unlock fails
@@ -407,7 +417,7 @@ gpg --edit-key YOUR_KEY_ID
 4. Ensure folder is shared between devices
 
 ### Backup fails
-1. Verify credentials in `backup/restic-config.yaml`
+1. Verify credentials in `backup/restic-config.conf`
 2. Check repository exists (create with `restic init` if needed)
 3. Ensure password is correct
 4. Check network connectivity to B2/S3
