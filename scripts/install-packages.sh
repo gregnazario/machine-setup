@@ -6,8 +6,9 @@ source "${SCRIPT_DIR}/platform-detect.sh"
 source "${SCRIPT_DIR}/profile-loader.sh"
 source "${SCRIPT_DIR}/ini-parser.sh"
 
-PROFILE=""
-DRY_RUN=false
+# Only initialize these if not already set (e.g., when sourced)
+PROFILE="${PROFILE:-}"
+DRY_RUN="${DRY_RUN:-false}"
 
 log_info() {
     echo -e "\033[0;34m[INFO]\033[0m $1"
@@ -55,7 +56,7 @@ install_packages_apt() {
     fi
     
     sudo apt update
-    sudo apt install -y "$packages"
+    sudo apt install -y $packages
 }
 
 install_packages_dnf() {
@@ -68,7 +69,7 @@ install_packages_dnf() {
         return
     fi
     
-    sudo dnf install -y "$packages"
+    sudo dnf install -y $packages
 }
 
 install_packages_emerge() {
@@ -81,7 +82,7 @@ install_packages_emerge() {
         return
     fi
     
-    sudo emerge --ask "$packages"
+    sudo emerge --ask $packages
 }
 
 install_packages_xbps() {
@@ -94,7 +95,7 @@ install_packages_xbps() {
         return
     fi
     
-    sudo xbps-install -S "$packages"
+    sudo xbps-install -S $packages
 }
 
 install_packages_homebrew() {
@@ -107,7 +108,7 @@ install_packages_homebrew() {
         return
     fi
     
-    brew install "$packages"
+    brew install $packages
 }
 
 install_packages_pkg() {
@@ -120,7 +121,7 @@ install_packages_pkg() {
         return
     fi
     
-    sudo pkg install -y "$packages"
+    sudo pkg install -y $packages
 }
 
 install_packages_winget() {
@@ -148,7 +149,7 @@ install_packages_pacman() {
         return
     fi
     
-    sudo pacman -S --noconfirm --needed "$packages"
+    sudo pacman -S --noconfirm --needed $packages
 }
 
 install_packages_apk() {
@@ -161,7 +162,7 @@ install_packages_apk() {
         return
     fi
     
-    sudo apk add "$packages"
+    sudo apk add $packages
 }
 
 install_packages_zypper() {
@@ -174,7 +175,7 @@ install_packages_zypper() {
         return
     fi
     
-    sudo zypper install -y "$packages"
+    sudo zypper install -y $packages
 }
 
 get_mapped_package_name() {
@@ -299,4 +300,7 @@ main() {
     fi
 }
 
-main "$@"
+# Only run main if script is executed directly (not sourced)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
