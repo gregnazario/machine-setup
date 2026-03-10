@@ -16,18 +16,20 @@ source "${REPO_ROOT}/scripts/profile-loader.sh"
 load_profile "full"
 
 # Full profile should have all minimal packages plus extra
-if ! echo "$PROFILE_DATA" | grep -q "nushell"; then
+PACKAGES=$(get_profile_packages)
+
+if ! echo "$PACKAGES" | grep -q "nushell"; then
     echo "❌ FAIL: Full profile doesn't include minimal packages (nushell)"
     exit 1
 fi
 
-if ! echo "$PROFILE_DATA" | grep -q "neovim"; then
+if ! echo "$PACKAGES" | grep -q "neovim"; then
     echo "❌ FAIL: Full profile doesn't include minimal packages (neovim)"
     exit 1
 fi
 
 # Full profile should have additional packages
-if ! echo "$PROFILE_DATA" | grep -q "zellij"; then
+if ! echo "$PACKAGES" | grep -q "zellij"; then
     echo "❌ FAIL: Full profile missing extended packages (zellij)"
     exit 1
 fi

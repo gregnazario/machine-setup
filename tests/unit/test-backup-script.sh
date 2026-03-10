@@ -48,11 +48,11 @@ echo ""
 
 # Test 3: Config validation
 echo "Test 3: Config file validation"
-if [[ -f "$REPO_ROOT/backup/restic-config.yaml" ]]; then
-    if python3 -c "import yaml; yaml.safe_load(open('$REPO_ROOT/backup/restic-config.yaml'))" 2>/dev/null; then
-        echo "✅ Config file is valid YAML"
+if [[ -f "$REPO_ROOT/backup/restic-config.conf" ]]; then
+    if grep -q "^\[repository\]" "$REPO_ROOT/backup/restic-config.conf" 2>/dev/null; then
+        echo "✅ Config file is valid INI"
     else
-        echo "❌ Config file has invalid YAML"
+        echo "❌ Config file has invalid format"
         exit 1
     fi
 else

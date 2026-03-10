@@ -5,8 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
 source "${SCRIPT_DIR}/ini-parser.sh"
 
-PROFILE_NAME=""
-PROFILE_FILE=""
+# Only initialize if not already set (e.g., when sourced)
+PROFILE_NAME="${PROFILE_NAME:-}"
+PROFILE_FILE="${PROFILE_FILE:-}"
 
 log_info() {
     echo -e "\033[0;34m[INFO]\033[0m $1"

@@ -11,7 +11,7 @@ ini_get() {
     
     local value
     value=$(grep -A 100 "^\[${section}\]" "$file" 2>/dev/null | \
-            grep "^${key}=" | \
+            grep "^[[:space:]]*${key}[[:space:]]*=" | \
             head -1 | \
             cut -d'=' -f2- | \
             sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -29,7 +29,7 @@ ini_get_list() {
     local key="$3"
     
     grep -A 100 "^\[${section}\]" "$file" 2>/dev/null | \
-        grep "^${key}=" | \
+        grep "^[[:space:]]*${key}[[:space:]]*=" | \
         cut -d'=' -f2- | \
         sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
@@ -84,14 +84,31 @@ ini_merge() {
             local key="${BASH_REMATCH[1]}"
             local value="${BASH_REMATCH[2]}"
             
-            # Remove section and key from base if exists
+            # Trim spaces from key and value
+            key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            
+            # Escape special characters for sed
+            local escaped_key=$(echo "$key" | sed 's/[.[\*^$()+?{|]/\\&/g')
+            local escaped_value=$(echo "$value" | sed 's/[&/\]/\\&/g')
+            
+            # Check if section exists
             if grep -q "^\[${current_section}\]" "$tmp_file"; then
-                sed -i "/^\[${current_section}\]/,/^\[/ s/^${key}=.*/${key}=${value}/" "$tmp_file" 2>/dev/null || \
-                sed -i.bak "/^\[${current_section}\]/,/^\[/ s/^${key}=.*/${key}=${value}/" "$tmp_file"
+                # Check if key exists in section
+                if grep -A 100 "^\[${current_section}\]" "$tmp_file" | grep -B 100 "^\[" | grep -q "^[[:space:]]*${escaped_key}[[:space:]]*="; then
+                    # Replace existing key
+                    sed -i "/^\[${current_section}\]/,/^\[/ s/^[[:space:]]*${escaped_key}[[:space:]]*=.*/${key} = ${escaped_value}/" "$tmp_file" 2>/dev/null || \
+                    sed -i.bak "/^\[${current_section}\]/,/^\[/ s/^[[:space:]]*${escaped_key}[[:space:]]*=.*/${key} = ${escaped_value}/" "$tmp_file"
+                else
+                    # Add key to existing section
+                    sed -i "/^\[${current_section}\]/a ${key} = ${value}" "$tmp_file" 2>/dev/null || \
+                    sed -i.bak "/^\[${current_section}\]/a ${key} = ${value}" "$tmp_file"
+                fi
             else
-                # Add to section
-                sed -i "/^\[${current_section}\]/a ${key}=${value}" "$tmp_file" 2>/dev/null || \
-                sed -i.bak "/^\[${current_section}\]/a ${key}=${value}" "$tmp_file"
+                # Add section and key
+                echo "" >> "$tmp_file"
+                echo "[${current_section}]" >> "$tmp_file"
+                echo "${key} = ${value}" >> "$tmp_file"
             fi
         fi
     done < "$overlay_file"
