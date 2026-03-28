@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/scripts/platform-detect.sh"
-source "${SCRIPT_DIR}/scripts/profile-loader.sh"
+# Machine Setup - Cross-platform configuration and syncing
+# Can be run standalone: curl -fsSL https://raw.githubusercontent.com/yourusername/machine-setup/main/setup.sh | bash
+# Or from within the cloned repo: ./setup.sh
+
+REPO_URL="${MACHINE_SETUP_REPO:-https://github.com/yourusername/machine-setup.git}"
+INSTALL_DIR="${MACHINE_SETUP_DIR:-$HOME/.machine-setup}"
 
 DEFAULT_PROFILE="auto"
 PROFILE="${DEFAULT_PROFILE}"
@@ -12,6 +15,22 @@ LINK_DOTFILES=true
 SETUP_SYNCTHING=true
 SETUP_BACKUP=true
 DRY_RUN=false
+
+log_info() {
+    echo -e "\033[0;34m[INFO]\033[0m $1"
+}
+
+log_warn() {
+    echo -e "\033[0;33m[WARN]\033[0m $1"
+}
+
+log_error() {
+    echo -e "\033[0;31m[ERROR]\033[0m $1"
+}
+
+log_success() {
+    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
+}
 
 usage() {
     cat <<EOF
@@ -30,6 +49,10 @@ Options:
     --list-profiles          List available profiles
     --show-profile <name>    Show details of a specific profile
     -h, --help               Show this help message
+
+Environment Variables:
+    MACHINE_SETUP_REPO       Git repository URL (default: $REPO_URL)
+    MACHINE_SETUP_DIR        Local install directory (default: $INSTALL_DIR)
 
 Examples:
     $0                                 # Auto-detect profile
@@ -55,13 +78,47 @@ Supported Platforms:
 EOF
 }
 
+# Bootstrap: ensure we're running from within the repo
+ensure_repo() {
+    # Check if we're already inside the repo
+    if [[ -f "${SCRIPT_DIR}/scripts/platform-detect.sh" && -f "${SCRIPT_DIR}/scripts/profile-loader.sh" ]]; then
+        REPO_DIR="$SCRIPT_DIR"
+        return 0
+    fi
+
+    # Not inside the repo — clone it
+    log_info "Repo not found locally. Cloning from ${REPO_URL}..."
+
+    if ! command -v git &> /dev/null; then
+        log_error "git is required to bootstrap. Please install git first."
+        exit 1
+    fi
+
+    if [[ -d "$INSTALL_DIR/.git" ]]; then
+        log_info "Updating existing clone at ${INSTALL_DIR}..."
+        git -C "$INSTALL_DIR" pull --ff-only || {
+            log_warn "Pull failed, re-cloning..."
+            rm -rf "$INSTALL_DIR"
+            git clone "$REPO_URL" "$INSTALL_DIR"
+        }
+    else
+        git clone "$REPO_URL" "$INSTALL_DIR"
+    fi
+
+    REPO_DIR="$INSTALL_DIR"
+    log_success "Repository ready at ${REPO_DIR}"
+}
+
 list_profiles() {
     echo "Available profiles:"
     echo
-    for profile_file in "${SCRIPT_DIR}/profiles"/*.yaml; do
+    for profile_file in "${REPO_DIR}/profiles"/*.conf; do
         if [[ -f "$profile_file" ]]; then
-            local profile_name=$(basename "$profile_file" .yaml)
-            local description=$(grep "^description:" "$profile_file" | cut -d' ' -f2-)
+            local profile_name
+            profile_name=$(basename "$profile_file" .conf)
+            source "${REPO_DIR}/scripts/ini-parser.sh"
+            local description
+            description=$(ini_get "$profile_file" "profile" "description" "")
             printf "  %-15s %s\n" "$profile_name" "$description"
         fi
     done
@@ -71,7 +128,7 @@ list_profiles() {
 
 show_profile() {
     local profile_name="$1"
-    local profile_file="${SCRIPT_DIR}/profiles/${profile_name}.yaml"
+    local profile_file="${REPO_DIR}/profiles/${profile_name}.conf"
 
     if [[ ! -f "$profile_file" ]]; then
         echo "Error: Profile '$profile_name' not found."
@@ -111,10 +168,16 @@ parse_args() {
                 shift
                 ;;
             --list-profiles)
+                # Need repo first for listing
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                source "${REPO_DIR}/scripts/ini-parser.sh"
                 list_profiles
                 exit 0
                 ;;
             --show-profile)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
                 show_profile "$2"
                 exit 0
                 ;;
@@ -140,26 +203,17 @@ check_prerequisites() {
     fi
 }
 
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_warn() {
-    echo -e "\033[0;33m[WARN]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
-
-log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
-}
-
 main() {
     parse_args "$@"
 
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
     log_info "Starting machine setup..."
+
+    ensure_repo
+
+    source "${REPO_DIR}/scripts/platform-detect.sh"
+    source "${REPO_DIR}/scripts/profile-loader.sh"
 
     detect_platform
     log_info "Detected platform: $PLATFORM"
@@ -181,7 +235,7 @@ main() {
     if [[ "$INSTALL_PACKAGES" == true ]]; then
         log_info "Installing packages..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/install-packages.sh" --profile "$PROFILE"
+            bash "${REPO_DIR}/scripts/install-packages.sh" --profile "$PROFILE"
         else
             echo "  Would install packages for profile: $PROFILE"
         fi
@@ -190,7 +244,7 @@ main() {
     if [[ "$LINK_DOTFILES" == true ]]; then
         log_info "Linking dotfiles..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/link-dotfiles.sh" --profile "$PROFILE"
+            bash "${REPO_DIR}/scripts/link-dotfiles.sh" --profile "$PROFILE"
         else
             echo "  Would link dotfiles for profile: $PROFILE"
         fi
@@ -199,7 +253,7 @@ main() {
     if [[ "$SETUP_SYNCTHING" == true ]]; then
         log_info "Setting up Syncthing..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/setup-syncthing.sh"
+            bash "${REPO_DIR}/scripts/setup-syncthing.sh"
         else
             echo "  Would setup Syncthing"
         fi
@@ -208,7 +262,7 @@ main() {
     if [[ "$SETUP_BACKUP" == true ]]; then
         log_info "Setting up backup..."
         if [[ "$DRY_RUN" == false ]]; then
-            "${SCRIPT_DIR}/setup-backup.sh"
+            bash "${REPO_DIR}/scripts/setup-backup.sh"
         else
             echo "  Would setup backup with Restic"
         fi
@@ -220,7 +274,7 @@ main() {
         log_info "Next steps:"
         echo "  1. Unlock git-crypt: git-crypt unlock"
         echo "  2. Start Syncthing: syncthing (or enable service)"
-        echo "  3. Verify backup: ${SCRIPT_DIR}/backup/backup.sh --dry-run"
+        echo "  3. Verify backup: ${REPO_DIR}/backup/backup.sh --dry-run"
     fi
 }
 

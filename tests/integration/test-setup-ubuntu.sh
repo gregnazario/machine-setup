@@ -91,7 +91,7 @@ else
 fi
 
 # Test backup configuration
-if [[ -f "backup/restic-config.yaml" ]]; then
+if [[ -f "backup/restic-config.conf" ]]; then
     echo "✅ Backup configuration exists"
 else
     echo "❌ FAIL: Backup configuration not found"

@@ -3,7 +3,7 @@
 ## Overview
 
 Cross-platform machine configuration and syncing system supporting:
-- **Linux**: Fedora, Ubuntu, Gentoo, Void, RaspberryPiOS
+- **Linux**: Fedora, Ubuntu, Debian, Gentoo, Void, Arch, Alpine, OpenSUSE, Rocky, Alma, RaspberryPiOS
 - **Unix**: macOS, FreeBSD
 - **Windows**: Windows 11 (with optional WSL)
 
@@ -15,13 +15,13 @@ Cross-platform machine configuration and syncing system supporting:
 - **Backup**: Restic → BackBlaze B2 (daily, encrypted)
 
 ### Profile System
-Extensible YAML-based profiles with inheritance:
+Extensible INI-based profiles with inheritance:
 - **minimal**: Essential CLI tools (default on RaspberryPiOS)
 - **full**: Complete dev environment (default on all other platforms)
 - **custom**: Unlimited user-defined profiles
 
 ### Package Management
-Platform-specific package managers with unified YAML definitions:
+Platform-specific package managers with unified INI definitions:
 - Fedora/Rocky/Alma: dnf
 - Ubuntu/RaspberryPiOS/Debian: apt
 - Gentoo: emerge + binpkg
@@ -33,6 +33,10 @@ Platform-specific package managers with unified YAML definitions:
 - FreeBSD: pkg + ports
 - Windows: winget
 
+### Standalone Bootstrap
+`setup.sh` can be run from anywhere — if the repo isn't present locally, it
+clones it to `~/.machine-setup` (or `$MACHINE_SETUP_DIR`) before proceeding.
+
 ---
 
 ## Repository Structure
@@ -41,56 +45,64 @@ Platform-specific package managers with unified YAML definitions:
 machine-setup/
 ├── PLAN.md                           # This document
 ├── README.md                         # User documentation
-├── setup.sh                          # Main setup script
+├── setup.sh                          # Main setup script (standalone)
 ├── packages/
-│   ├── common.yaml                   # Universal package definitions
+│   ├── common.conf                   # Universal package definitions
 │   ├── platforms/
-│   │   ├── macos.yaml
-│   │   ├── freebsd.yaml
-│   │   ├── fedora.yaml
-│   │   ├── ubuntu.yaml
-│   │   ├── debian.yaml
-│   │   ├── gentoo.yaml
-│   │   ├── void.yaml
-│   │   ├── arch.yaml
-│   │   ├── alpine.yaml
-│   │   ├── opensuse.yaml
-│   │   ├── rocky.yaml
-│   │   ├── alma.yaml
-│   │   ├── raspberrypios.yaml
-│   │   └── windows.yaml
-│   └── custom.yaml.example
+│   │   ├── macos.conf
+│   │   ├── freebsd.conf
+│   │   ├── fedora.conf
+│   │   ├── ubuntu.conf
+│   │   ├── debian.conf
+│   │   ├── gentoo.conf
+│   │   ├── void.conf
+│   │   ├── arch.conf
+│   │   ├── alpine.conf
+│   │   ├── opensuse.conf
+│   │   ├── rocky.conf
+│   │   ├── alma.conf
+│   │   ├── raspberrypios.conf
+│   │   └── windows.conf
+│   └── custom.conf.example
 ├── profiles/
-│   ├── minimal.yaml
-│   ├── full.yaml
-│   ├── server.yaml.example
-│   └── gaming.yaml.example
+│   ├── minimal.conf
+│   ├── full.conf
+│   ├── server.conf.example
+│   └── gaming.conf.example
 ├── dotfiles/
 │   ├── .gitattributes               # git-crypt config
-│   ├── profiles/
-│   │   ├── minimal/
-│   │   ├── full/
-│   │   └── custom/
-│   └── secrets/                     # git-crypt encrypted
+│   └── profiles/
+│       ├── minimal/
+│       └── full/
 ├── scripts/
+│   ├── ini-parser.sh
 │   ├── install-packages.sh
 │   ├── link-dotfiles.sh
 │   ├── setup-syncthing.sh
 │   ├── setup-backup.sh
+│   ├── setup-docker.sh
+│   ├── setup-ssh-agent.sh
 │   ├── platform-detect.sh
 │   ├── profile-loader.sh
 │   └── utils/
+│       ├── alpine-setup.sh
+│       ├── arch-setup.sh
 │       ├── gentoo-setup.sh
 │       ├── void-setup.sh
 │       └── freebsd-setup.sh
-├── secrets/
-│   ├── ssh-keys/
-│   ├── gpg-keys/
-│   ├── api-tokens/
-│   └── backup-credentials/
-└── backup/
-    ├── restic-config.yaml
-    └── backup.sh
+├── backup/
+│   ├── restic-config.conf
+│   ├── backup.sh
+│   ├── com.user.restic-backup.plist
+│   ├── restic-backup.service
+│   ├── restic-backup.timer
+│   └── quick-test.sh
+└── tests/
+    ├── run-tests.sh
+    ├── quick-validate.sh
+    ├── unit/
+    ├── integration/
+    └── e2e/
 ```
 
 ---
@@ -116,7 +128,9 @@ machine-setup/
 ### Utilities
 - **Network**: jq, httpie/curlie, doggo, gping
 - **Files**: rsync, xcp, yazi/broot, ouch
-- **Security**: pass/gopass, gnupg, ssh-agent
+- **Security**: pass/gopass, gnupg, ssh-agent, git-crypt
+- **Sync**: syncthing
+- **Backup**: restic
 - **Other**: asciinema, fastfetch
 
 ### Platform-Specific
@@ -149,7 +163,8 @@ machine-setup/
 - nushell, neovim
 - ripgrep, fd-find, fzf
 - git, mise
-- gnupg, openssh
+- gnupg, openssh, git-crypt
+- syncthing
 
 **Dotfiles**:
 - nushell config
@@ -169,7 +184,7 @@ machine-setup/
 - bat, eza, dust, bottom, procs
 - jq, httpie, doggo, gping
 - rsync, yazi, ouch, asciinema, glow, fastfetch
-- pass, python3, rustup, gh
+- pass, restic, python3, rustup, gh
 - docker, kubectl
 
 **Dotfiles** (extends minimal):
@@ -185,14 +200,14 @@ machine-setup/
 **Use case**: Full development workstations
 
 ### Custom Profiles
-Users can create custom profiles in `profiles/*.yaml`:
+Users can create custom profiles in `profiles/*.conf`:
 - Inherit from `minimal` or `full`
 - Add extra packages, dotfiles, services
 - Define setup scripts
 
 Example profiles included:
-- `server.yaml.example`: minimal + monitoring + networking
-- `gaming.yaml.example`: full + gaming tools
+- `server.conf.example`: minimal + monitoring + networking
+- `gaming.conf.example`: full + gaming tools
 
 ---
 
@@ -200,30 +215,31 @@ Example profiles included:
 
 ### Initial Setup
 ```bash
-# Clone repository
+# Option 1: Clone and run
 git clone https://github.com/yourusername/machine-setup.git
 cd machine-setup
-
-# Run setup (auto-detects profile and platform)
 ./setup.sh
 
-# Or specify profile explicitly
+# Option 2: Run standalone (auto-clones repo)
+curl -fsSL https://raw.githubusercontent.com/yourusername/machine-setup/main/setup.sh | bash
+
+# Specify profile explicitly
 ./setup.sh --profile minimal
 ./setup.sh --profile full
 ```
 
 ### Setup Steps
-1. **Detect platform** (macOS, FreeBSD, Fedora, Ubuntu, Gentoo, Void, RaspberryPiOS, Windows)
-2. **Load profile** (auto-detect or via --profile flag)
-3. **Resolve profile inheritance** (e.g., full extends minimal)
-4. **Install base dependencies** (git, git-crypt, syncthing, mise)
+1. **Bootstrap** (clone repo if not present locally)
+2. **Detect platform** (macOS, FreeBSD, Fedora, Ubuntu, Gentoo, Void, RaspberryPiOS, Windows)
+3. **Load profile** (auto-detect or via --profile flag)
+4. **Resolve profile inheritance** (e.g., full extends minimal)
 5. **Install packages** from profile + platform packages
 6. **Symlink dotfiles** from `dotfiles/profiles/<profile>/`
-7. **Unlock git-crypt** (requires GPG key)
-8. **Enable services** (sshd, docker, etc.)
-9. **Run setup scripts** (ssh-agent, docker, etc.)
-10. **Setup Syncthing** (configure and connect devices)
-11. **Setup backup** (Restic + daily cron/systemd)
+7. **Setup Syncthing** (configure and connect devices)
+8. **Setup backup** (Restic + daily cron/systemd/launchd)
+9. **Unlock git-crypt** (requires GPG key)
+10. **Enable services** (sshd, docker, etc.)
+11. **Run setup scripts** (ssh-agent, docker, etc.)
 12. **Verify installation**
 
 ---
@@ -244,26 +260,22 @@ Auto-detect OS and map to package manager:
 - Windows → winget
 
 ### Package Name Mapping
-Some tools have different names across platforms:
-```yaml
-fd:
-  ubuntu: fd-find
-  debian: fd-find
-  fedora: fd-find
-  rocky: fd-find
-  alma: fd-find
-  void: fd
-  gentoo: sys-apps/fd
-  freebsd: fd-find
-  macos: fd
-  arch: fd
-  alpine: fd
-  opensuse: fd
+Some tools have different names across platforms (defined in `packages/common.conf`):
+```ini
+[package_mapping.fd-find]
+ubuntu = fd-find
+fedora = fd-find
+debian = fd-find
+void = fd
+gentoo = sys-apps/fd
+freebsd = fd-find
+macos = fd
+windows = fd.find
 ```
 
 ### Gentoo Special Handling
 - Enable `binpkg` by default for faster installs
-- User-defined global `USE` flags in `gentoo.yaml`
+- User-defined global `USE` flags in `gentoo.conf`
 - Per-package USE flags supported
 - Auto-configure `/etc/portage/make.conf`
 
@@ -369,23 +381,29 @@ git commit -m "Add new secret"
 ## Backup Strategy
 
 ### Restic Configuration
-```yaml
-repository: b2:your-bucket-name:machine-backup
-password: <from-password-manager>
-schedule: daily
-retention:
-  keep-daily: 7
-  keep-weekly: 4
-  keep-monthly: 12
-paths:
-  - ~/dotfiles
-  - ~/.ssh
-  - ~/Documents
-  - ~/Projects
-excludes:
-  - node_modules
-  - .git/objects
-  - "*.log"
+```ini
+[repository]
+location = b2:your-bucket-name:machine-backup
+password = <from-password-manager>
+
+[backup]
+schedule = daily
+
+[retention]
+keep_daily = 7
+keep_weekly = 4
+keep_monthly = 12
+
+[paths]
+1 = ~/dotfiles
+2 = ~/.ssh
+3 = ~/Documents
+4 = ~/Projects
+
+[excludes]
+1 = node_modules
+2 = .git/objects
+3 = *.log
 ```
 
 ### Backup Targets
@@ -393,7 +411,7 @@ excludes:
 - Alternative: Any S3-compatible service
 
 ### Backup Script
-Runs daily at 2 AM via cron/systemd timer.
+Runs daily at 2 AM via cron/systemd timer/launchd.
 
 ### Restore Process
 ```bash
@@ -432,7 +450,8 @@ restic restore <snapshot-id> --target /tmp/restore
 - Monthly git-crypt key rotation reminder
 
 ### Platform-Specific Services
-- Linux: systemd timers
+- Linux (systemd): systemd timers
+- Linux (OpenRC): cron + rc-service
 - macOS: launchd
 - FreeBSD: cron
 - Windows: Task Scheduler
@@ -460,7 +479,7 @@ restic restore <snapshot-id> --target /tmp/restore
 ## Documentation Requirements
 
 ### README.md Should Include
-- Quick start guide
+- Quick start guide (including standalone bootstrap)
 - OS-specific setup instructions
 - Profile system documentation
 - How to add new packages
@@ -489,11 +508,12 @@ restic restore <snapshot-id> --target /tmp/restore
 
 ## Success Criteria
 
-- ✅ Single command setup on any supported platform
-- ✅ Minimal profile < 20 packages, full profile < 50 packages
-- ✅ Real-time dotfiles sync across all machines
-- ✅ Secrets encrypted at rest and in transit
-- ✅ Daily automated backups with < 1 hour completion time
-- ✅ Restore procedure completes in < 30 minutes
-- ✅ Profile switching works without re-installing base tools
-- ✅ All platforms tested and documented
+- Single command setup on any supported platform
+- Standalone bootstrap (works without pre-cloning the repo)
+- Minimal profile < 20 packages, full profile < 50 packages
+- Real-time dotfiles sync across all machines
+- Secrets encrypted at rest and in transit
+- Daily automated backups with < 1 hour completion time
+- Restore procedure completes in < 30 minutes
+- Profile switching works without re-installing base tools
+- All platforms tested and documented
