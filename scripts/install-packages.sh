@@ -82,7 +82,7 @@ install_packages_emerge() {
         return
     fi
     
-    sudo emerge --ask $packages
+    sudo emerge --noreplace $packages
 }
 
 install_packages_xbps() {
@@ -191,9 +191,9 @@ get_mapped_package_name() {
     fi
     
     common_content=$(cat "$common_file")
-    platform_mapped=$(ini_get "$common_file" "package_mapping.${package_name}.${PLATFORM}" "$package_name")
-    
-    if [[ "$platform_mapped" != "$package_name" && -n "$platform_mapped" ]]; then
+    platform_mapped=$(ini_get "$common_file" "package_mapping.${package_name}" "$PLATFORM" "")
+
+    if [[ -n "$platform_mapped" ]]; then
         echo "$platform_mapped"
     else
         echo "$package_name"

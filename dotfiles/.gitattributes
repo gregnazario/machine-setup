@@ -29,7 +29,7 @@ secrets/** filter=git-crypt diff=git-crypt
 **/*.crt filter=git-crypt diff=git-crypt
 
 # Backup config with passwords
-backup/restic-config.yaml filter=git-crypt diff=git-crypt
+backup/restic-config.conf filter=git-crypt diff=git-crypt
 
 # Don't encrypt these
 .gitattributes !filter !diff

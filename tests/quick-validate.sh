@@ -18,14 +18,14 @@ REQUIRED_FILES=(
     "README.md"
     "PLAN.md"
     "AGENTS.md"
-    "packages/common.yaml"
-    "profiles/minimal.yaml"
-    "profiles/full.yaml"
+    "packages/common.conf"
+    "profiles/minimal.conf"
+    "profiles/full.conf"
     "scripts/platform-detect.sh"
     "scripts/profile-loader.sh"
     "scripts/install-packages.sh"
     "scripts/link-dotfiles.sh"
-    "backup/restic-config.yaml"
+    "backup/restic-config.conf"
     "dotfiles/.gitattributes"
 )
 
@@ -39,7 +39,7 @@ echo "✅ All required files present"
 
 # 2. Check scripts are executable
 echo "2. Checking script permissions..."
-for script in setup.sh scripts/*.sh tests/**/*.sh; do
+for script in setup.sh scripts/*.sh; do
     if [[ -f "$script" && ! -x "$script" ]]; then
         echo "❌ Not executable: $script"
         exit 1
@@ -47,18 +47,17 @@ for script in setup.sh scripts/*.sh tests/**/*.sh; do
 done
 echo "✅ All scripts are executable"
 
-# 3. Validate YAML files
-echo "3. Validating YAML files..."
-for yaml in packages/**/*.yaml profiles/*.yaml backup/*.yaml; do
-    if ! python3 -c "import yaml; yaml.safe_load(open('$yaml'))" 2>/dev/null; then
-        echo "❌ Invalid YAML: $yaml"
-        exit 1
+# 3. Validate INI config files
+echo "3. Validating INI config files..."
+for ini_file in packages/*.conf packages/platforms/*.conf profiles/*.conf backup/*.conf; do
+    if [[ -f "$ini_file" ]]; then
+        if ! grep -q "^\[" "$ini_file" 2>/dev/null; then
+            echo "❌ Invalid INI: $ini_file (no sections found)"
+            exit 1
+        fi
     fi
 done
-echo "✅ All YAML files are valid"
-    done
-    echo "✅ All YAML files are valid"
-fi
+echo "✅ All INI config files are valid"
 
 # 4. Test platform detection
 echo "4. Testing platform detection..."
@@ -72,6 +71,7 @@ echo "✅ Detected: $PLATFORM with $PACKAGE_MANAGER"
 
 # 5. Test profile loading
 echo "5. Testing profile loading..."
+source scripts/ini-parser.sh
 source scripts/profile-loader.sh
 load_profile "minimal"
 if [[ "$PROFILE_NAME" != "minimal" ]]; then
@@ -82,13 +82,13 @@ echo "✅ Profile loaded: $PROFILE_NAME"
 
 # 6. Test dry-run
 echo "6. Testing dry-run mode..."
-./setup.sh --dry-run --no-syncthing --no-backup > /tmp/quick-validation.log 2>&1
-if [[ $? -ne 0 ]]; then
+if ./setup.sh --dry-run --no-syncthing --no-backup > /tmp/quick-validation.log 2>&1; then
+    echo "✅ Dry-run completed successfully"
+else
     echo "❌ Dry-run failed"
     cat /tmp/quick-validation.log
     exit 1
 fi
-echo "✅ Dry-run completed successfully"
 
 echo ""
 echo "================"

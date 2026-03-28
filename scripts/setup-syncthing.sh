@@ -89,7 +89,7 @@ enable_syncthing_service() {
     log_info "Enabling Syncthing service..."
     
     case "$PLATFORM" in
-        ubuntu|fedora|raspberrypios)
+        ubuntu|debian|fedora|raspberrypios|arch|opensuse|rocky|alma)
             systemctl --user enable syncthing
             systemctl --user start syncthing
             ;;
@@ -100,12 +100,16 @@ enable_syncthing_service() {
             sudo rc-update add syncthing default
             sudo rc-service syncthing start
             ;;
+        alpine)
+            sudo rc-update add syncthing default
+            sudo rc-service syncthing start
+            ;;
         freebsd)
             sysrc syncthing_enable=YES
             service syncthing start
             ;;
         macos)
-            log_info "On macOS, Syncthing can be started via the application or: syncthing"
+            log_info "On macOS, Syncthing can be started via the application or: brew services start syncthing"
             ;;
         *)
             log_warn "Unknown platform for service setup. Please enable Syncthing manually."

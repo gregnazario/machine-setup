@@ -1,0 +1,14 @@
+; Custom package definitions
+; Copy this file to packages/custom.conf and modify as needed
+
+[packages]
+extra = my-custom-tool another-tool
+custom_category = specific-package
+
+[package_versions]
+nodejs = 20
+python = 3.12
+
+[custom_repos.my-custom-repo]
+name = my-custom-repo
+url = https://example.com/repo

@@ -1,0 +1,29 @@
+; Profile: gaming
+; Gaming-focused setup with Wine, controllers, and gaming tools
+
+[profile]
+name = gaming
+description = Gaming-focused setup with Wine, controllers, and gaming tools
+extends = full
+
+[packages]
+gaming = wine lutris steam mangohud
+gaming_utils = gamecontrollerdb
+
+[dotfiles]
+source = profiles/gaming/
+
+[dotfiles.links.1]
+src = .config/lutris/
+dest = ~/.config/lutris/
+
+[dotfiles.links.2]
+src = .steam/
+dest = ~/.steam/
+
+[services]
+enable = steam-client
+
+[setup_scripts]
+run = scripts/setup-wine.sh
+run = scripts/setup-gaming-permissions.sh
