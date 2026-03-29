@@ -14,12 +14,13 @@ Cross-platform machine configuration and syncing system with profile-based packa
 ## Quick Start
 
 ```bash
-# Clone the repository
+# Option 1: Clone and run
 git clone https://github.com/yourusername/machine-setup.git
 cd machine-setup
-
-# Run setup (auto-detects platform and profile)
 ./setup.sh
+
+# Option 2: Run standalone (auto-clones repo to ~/.machine-setup)
+curl -fsSL https://raw.githubusercontent.com/yourusername/machine-setup/main/setup.sh | bash
 
 # Or specify a profile explicitly
 ./setup.sh --profile minimal
@@ -53,7 +54,8 @@ Essential CLI tools only - ideal for servers and resource-constrained systems.
 **Includes:**
 - Shell: nushell
 - Editor: neovim (basic config)
-- Tools: ripgrep, fd-find, fzf, git, mise, gnupg, openssh
+- Tools: ripgrep, fd-find, fzf, git, mise, gnupg, openssh, git-crypt
+- Sync: syncthing
 
 **Use for:** Servers, Raspberry Pi, resource-constrained systems
 
@@ -67,6 +69,7 @@ Complete development environment with all tools and utilities.
 - Utilities: jq, httpie, doggo, gping, rsync, yazi, ouch, asciinema, glow
 - Languages: Python 3, Rust (via mise)
 - DevOps: Docker, kubectl
+- Backup: restic
 
 **Use for:** Development workstations
 
@@ -161,11 +164,11 @@ machine-setup/
 │   └── *.example             # Example custom profiles
 ├── dotfiles/                  # Configuration files
 │   ├── profiles/             # Profile-specific dotfiles
-│   ├── secrets/              # Encrypted secrets
 │   └── .gitattributes        # git-crypt config
 ├── scripts/                   # Setup scripts
+│   └── utils/                # Platform-specific helpers
 ├── backup/                    # Backup configuration
-└── secrets/                   # Encrypted sensitive data
+└── tests/                     # Test suite
 ```
 
 ## Dotfiles Management
@@ -268,12 +271,14 @@ The following are automatically encrypted:
    ```
 
 2. Edit `backup/restic-config.conf` with your credentials:
-   ```yaml
-   repository: b2:your-bucket-name:machine-backup
-   password: "your-strong-password"
-   b2:
-     account_id: "your-account-id"
-     account_key: "your-account-key"
+   ```ini
+   [repository]
+   location = b2:your-bucket-name:machine-backup
+   password = your-strong-password
+
+   [b2]
+   account_id = your-account-id
+   account_key = your-account-key
    ```
 
 3. Test the backup:
@@ -306,11 +311,9 @@ restic restore <snapshot-id> --target /tmp/restore --include /path/to/file
 ### Adding Packages
 
 Edit `packages/custom.conf`:
-```yaml
-packages:
-  extra:
-    - my-new-tool
-    - another-package
+```ini
+[packages]
+extra = my-new-tool another-package
 ```
 
 Then run:
@@ -346,18 +349,17 @@ Each platform has its own package file in `packages/platforms/`:
    ```
 
 2. Edit the profile:
-   ```yaml
-   name: my-server
-   description: My custom server setup
-   extends: minimal
-   
-   packages:
-     monitoring:
-       - prometheus-node-exporter
-       - grafana
-   
-   services:
-     - prometheus-node-exporter
+   ```ini
+   [profile]
+   name = my-server
+   description = My custom server setup
+   extends = minimal
+
+   [packages]
+   monitoring = prometheus-node-exporter grafana
+
+   [services]
+   enable = prometheus-node-exporter
    ```
 
 3. Run with your profile:

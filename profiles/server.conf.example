@@ -1,0 +1,33 @@
+; Profile: server
+; Server profile - minimal + monitoring + networking tools
+
+[profile]
+name = server
+description = Server profile - minimal + monitoring + networking tools
+extends = minimal
+
+[packages]
+monitoring = btop htop
+networking = curl wget
+system = tmux
+
+[dotfiles]
+source = profiles/server/
+
+[dotfiles.links.1]
+src = .config/nushell/
+dest = ~/.config/nushell/
+
+[dotfiles.links.2]
+src = .config/nvim/
+dest = ~/.config/nvim/
+
+[dotfiles.links.3]
+src = .tmux.conf
+dest = ~/.tmux.conf
+
+[services]
+enable = sshd cronie
+
+[setup_scripts]
+run = scripts/setup-ssh-agent.sh

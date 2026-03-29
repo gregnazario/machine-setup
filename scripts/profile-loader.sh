@@ -54,9 +54,8 @@ load_profile() {
 
 get_profile_packages() {
     local packages=""
-    local current_section=""
     local in_packages=false
-    
+
     while IFS= read -r line; do
         # Section header
         if [[ "$line" =~ ^\[([^]]+)\] ]]; then
@@ -67,10 +66,9 @@ get_profile_packages() {
             fi
             continue
         fi
-        
+
         # Package entries
         if [[ "$in_packages" == true && "$line" =~ ^([^=]+)=(.*)$ ]]; then
-            local category="${BASH_REMATCH[1]}"
             local pkgs="${BASH_REMATCH[2]}"
             packages="$packages$pkgs
 "

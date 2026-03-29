@@ -4,7 +4,6 @@ set -euo pipefail
 # Alpine Linux Platform Setup Script
 # Configures apk and OpenRC services
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=false
 
 log_info() {
@@ -49,7 +48,8 @@ setup_repos() {
     cp "$repos_file" "${repos_file}.backup.$(date +%Y%m%d_%H%M%S)"
     
     # Detect Alpine version
-    local alpine_version=$(grep VERSION_ID /etc/os-release | cut -d'"' -f2 | cut -d'.' -f1,2)
+    local alpine_version
+    alpine_version=$(grep VERSION_ID /etc/os-release | cut -d'"' -f2 | cut -d'.' -f1,2)
     
     # Configure repositories
     cat > "$repos_file" <<EOF
@@ -216,7 +216,7 @@ configure_hostname() {
     fi
     
     if [[ ! -f /etc/hostname ]]; then
-        read -p "Enter hostname [alpine]: " hostname
+        read -rp "Enter hostname [alpine]: " hostname
         hostname=${hostname:-alpine}
         echo "$hostname" > /etc/hostname
         log_info "Hostname set to: $hostname"

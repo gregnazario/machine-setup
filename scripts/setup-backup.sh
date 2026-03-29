@@ -213,6 +213,22 @@ EOF
     log_success "Created backup script at $BACKUP_SCRIPT"
 }
 
+setup_launchd_plist() {
+    local plist_src="${SCRIPT_DIR}/../backup/com.user.restic-backup.plist"
+    local plist_dest="$HOME/Library/LaunchAgents/com.user.restic-backup.plist"
+
+    if [[ ! -f "$plist_src" ]]; then
+        log_warn "launchd plist template not found at $plist_src"
+        setup_cron_job
+        return
+    fi
+
+    mkdir -p "$HOME/Library/LaunchAgents"
+    cp "$plist_src" "$plist_dest"
+    launchctl load "$plist_dest" 2>/dev/null || true
+    log_success "launchd plist installed at $plist_dest"
+}
+
 setup_cron_job() {
     detect_platform
     
@@ -233,7 +249,8 @@ setup_cron_job() {
 setup_systemd_timer() {
     detect_platform
     
-    if [[ "$PLATFORM" != "fedora" && "$PLATFORM" != "ubuntu" && "$PLATFORM" != "raspberrypios" ]]; then
+    local systemd_platforms="fedora ubuntu debian raspberrypios arch opensuse rocky alma"
+    if ! echo "$systemd_platforms" | grep -qw "$PLATFORM"; then
         log_info "Systemd timers not available on this platform"
         return
     fi
@@ -284,8 +301,11 @@ main() {
     read -p "Setup automated daily backups? (Y/n): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        if [[ "$PLATFORM" == "fedora" || "$PLATFORM" == "ubuntu" || "$PLATFORM" == "raspberrypios" ]]; then
+        local systemd_platforms="fedora ubuntu debian raspberrypios arch opensuse rocky alma"
+        if echo "$systemd_platforms" | grep -qw "$PLATFORM"; then
             setup_systemd_timer
+        elif [[ "$PLATFORM" == "macos" ]]; then
+            setup_launchd_plist
         else
             setup_cron_job
         fi

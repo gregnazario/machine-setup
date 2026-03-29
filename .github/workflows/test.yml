@@ -1,4 +1,4 @@
-name: E2E Tests
+name: CI
 
 on:
   push:
@@ -8,240 +8,448 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint-and-validate:
+
+  # ============================================================
+  # Lint & validate (fast gate — everything else depends on this)
+  # ============================================================
+  lint:
     name: Lint & Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install dependencies
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Shellcheck all scripts
         run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-        
-      - name: Validate YAML workflow files
-        run: |
-          if find .github/workflows -name "*.yml" -o -name "*.yaml" | grep -q .; then
-            find .github/workflows -name "*.yml" -o -name "*.yaml" | xargs python3 -c "import sys, yaml; [yaml.safe_load(open(f)) for f in sys.argv[1:]]"
-          fi
-          
-      - name: Shellcheck scripts
-        run: |
-          find scripts/ -name "*.sh" | xargs shellcheck -x
-          shellcheck setup.sh
-      
+          shellcheck -x -S warning setup.sh
+          find scripts/ -name "*.sh" -exec shellcheck -x -S warning {} +
+          find tests/ -name "*.sh" -exec shellcheck -x -S warning {} +
+          find backup/ -name "*.sh" -exec shellcheck -x -S warning {} +
+
       - name: Validate INI config files
         run: |
+          status=0
           for file in packages/*.conf packages/platforms/*.conf profiles/*.conf backup/*.conf; do
             if [[ -f "$file" ]]; then
-              echo "Validating $file"
               if ! grep -qE "^\[" "$file"; then
-                echo "Error: No sections found in $file"
-                exit 1
+                echo "❌ No sections found in $file"
+                status=1
               fi
             fi
           done
+          exit $status
 
-  test-platform-detection:
-    name: Platform Detection
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Test platform detection
-        shell: bash
+      - name: Check scripts are executable
         run: |
-          chmod +x scripts/platform-detect.sh
-          bash scripts/platform-detect.sh || echo "Platform detected: $PLATFORM"
-          
-      - name: Test dry-run setup
-        shell: bash
-        run: |
-          chmod +x setup.sh
-          ./setup.sh --dry-run --no-syncthing --no-backup
+          for f in setup.sh scripts/*.sh; do
+            test -x "$f" || { echo "❌ Not executable: $f"; exit 1; }
+          done
 
-  test-profiles:
-    name: Profile System
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Test profile loading
+      - name: Validate git-crypt configuration
         run: |
-          chmod +x scripts/*.sh
-          
-          # Test minimal profile
-          bash tests/unit/test-profile-loader.sh minimal
-          
-          # Test full profile
-          bash tests/unit/test-profile-loader.sh full
-          
-      - name: Test profile inheritance
-        run: |
-          bash tests/unit/test-profile-inheritance.sh
+          test -f dotfiles/.gitattributes
+          grep -q "filter=git-crypt" dotfiles/.gitattributes
+          # Ensure backup config reference is .conf not .yaml
+          grep -q "restic-config.conf" dotfiles/.gitattributes
 
-  test-package-installation:
-    name: Package Installation (Dry Run)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Test package collection
+      - name: Check for hardcoded secrets
         run: |
-          chmod +x scripts/*.sh
-          bash tests/unit/test-package-collection.sh
-
-  test-dotfiles-linking:
-    name: Dotfiles Linking
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Test dotfile linking (dry run)
-        run: |
-          chmod +x scripts/*.sh
-          
-          # Create test home directory
-          export HOME=/tmp/test-home
-          mkdir -p $HOME
-          
-          # Test minimal profile
-          bash tests/unit/test-dotfiles-linking.sh minimal
-          
-          # Test full profile
-          bash tests/unit/test-dotfiles-linking.sh full
-
-  test-integration-ubuntu:
-    name: Integration Test (Ubuntu)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git-crypt gnupg
-      
-      - name: Run integration test
-        run: |
-          chmod +x setup.sh scripts/*.sh
-          bash tests/integration/test-setup-ubuntu.sh
-
-  test-integration-macos:
-    name: Integration Test (macOS)
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install dependencies
-        run: |
-          brew install git-crypt gnupg
-      
-      - name: Run integration test
-        run: |
-          chmod +x setup.sh scripts/*.sh
-          bash tests/integration/test-setup-macos.sh
-
-  test-backup-configuration:
-    name: Backup Configuration
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y restic
-      
-      - name: Test backup script generation
-        run: |
-          chmod +x scripts/*.sh
-          bash tests/unit/test-backup-config.sh
-
-  e2e-test-simulation:
-    name: E2E Simulation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git-crypt gnupg restic
-      
-      - name: Simulate fresh machine setup
-        run: |
-          chmod +x setup.sh scripts/*.sh
-          
-          # Create isolated test environment
-          export TEST_HOME=/tmp/test-machine
-          mkdir -p $TEST_HOME
-          
-          # Run e2e test
-          bash tests/e2e/test-fresh-setup.sh
-
-  security-check:
-    name: Security Checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Check for secrets in code
-        run: |
-          # Simplified check - only flag actual hardcoded passwords, not variable names
-          # Exclude backup config, test files, and templates
-          if grep -r --include="*.sh" --exclude-dir=".git" --exclude="backup/" . \
-            -e 'password.*=.*["'"'"'"'"'[a-zA-Z0-9_]{20,}' 2>/dev/null; then
-            echo "Error: Found potential hardcoded secret"
+          if grep -rn --include="*.sh" --exclude-dir=".git" \
+            -E 'password[[:space:]]*=.*["'"'"'][a-zA-Z0-9_]{20,}' . 2>/dev/null; then
+            echo "❌ Potential hardcoded secret"
             exit 1
           fi
           echo "✅ No hardcoded secrets found"
-      
-      - name: Validate git-crypt configuration
-        run: |
-          # Check that .gitattributes properly encrypts secrets
-          test -f dotfiles/.gitattributes
-          grep -q "filter=git-crypt" dotfiles/.gitattributes
-          
-      - name: Check file permissions
-        run: |
-          # Ensure scripts are executable
-          find scripts/ -name "*.sh" -exec test -x {} \;
-          test -x setup.sh
 
-  documentation-check:
-    name: Documentation Validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Check required documentation
+      - name: Required documentation exists
         run: |
           test -f README.md
           test -f PLAN.md
           test -f AGENTS.md
-          
-      - name: Validate markdown
-        run: |
-          # Check for broken internal links
-          grep -r "\[.*\](.*\.md)" *.md | grep -v "http" | while read line; do
-            file=$(echo "$line" | sed 's/.*](\([^)]*\)).*/\1/')
-            test -f "$file" || echo "Warning: Link to $file might be broken"
-          done
 
-  test-complete-matrix:
-    name: Complete Platform Matrix
-    needs: [lint-and-validate, test-profiles]
+  # ============================================================
+  # Unit tests (profiles, packages, dotfiles, backup, INI parser)
+  # ============================================================
+  unit-tests:
+    name: Unit Tests
+    needs: lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: [fedora, ubuntu, gentoo, void, raspberrypios, macos, freebsd, windows]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Test platform package definitions
+
+      - name: Profile loader
         run: |
-          bash tests/unit/test-platform-packages.sh ${{ matrix.platform }}
+          bash tests/unit/test-profile-loader.sh minimal
+          bash tests/unit/test-profile-loader.sh full
+
+      - name: Profile inheritance
+        run: bash tests/unit/test-profile-inheritance.sh
+
+      - name: Package collection
+        run: bash tests/unit/test-package-collection.sh
+
+      - name: Dotfiles linking
+        run: |
+          export HOME=/tmp/test-home
+          mkdir -p "$HOME"
+          bash tests/unit/test-dotfiles-linking.sh minimal
+          bash tests/unit/test-dotfiles-linking.sh full
+
+      - name: Backup configuration
+        run: bash tests/unit/test-backup-config.sh
+
+  # ============================================================
+  # Package definition validation for every platform
+  # ============================================================
+  platform-package-defs:
+    name: "Pkg defs: ${{ matrix.platform }}"
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - fedora
+          - ubuntu
+          - debian
+          - gentoo
+          - void
+          - arch
+          - alpine
+          - opensuse
+          - rocky
+          - alma
+          - raspberrypios
+          - macos
+          - freebsd
+          - windows
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate ${{ matrix.platform }} package definitions
+        run: bash tests/unit/test-platform-packages.sh ${{ matrix.platform }}
+
+  # ============================================================
+  # Native runners: Ubuntu, macOS, Windows
+  # ============================================================
+  native-ubuntu:
+    name: "Native: Ubuntu"
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run platform test
+        run: bash tests/platform-test.sh ubuntu apt
+      - name: Run integration test
+        run: |
+          sudo apt-get update && sudo apt-get install -y git-crypt gnupg
+          bash tests/integration/test-setup-ubuntu.sh
+
+  native-macos:
+    name: "Native: macOS"
+    needs: lint
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run platform test
+        run: bash tests/platform-test.sh macos homebrew
+      - name: Run integration test
+        run: |
+          brew install git-crypt gnupg
+          bash tests/integration/test-setup-macos.sh
+
+  native-windows:
+    name: "Native: Windows"
+    needs: lint
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run platform detection
+        shell: bash
+        run: |
+          source scripts/platform-detect.sh
+          detect_platform
+          echo "Platform: $PLATFORM"
+          echo "Package Manager: $PACKAGE_MANAGER"
+      - name: Run dry-run setup
+        shell: bash
+        run: bash setup.sh --dry-run --no-syncthing --no-backup
+
+  # ============================================================
+  # Docker: Linux distributions
+  # Each job runs the full platform-test.sh inside the real distro
+  # ============================================================
+  docker-fedora:
+    name: "Docker: Fedora"
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites
+        run: dnf install -y bash git findutils
+      - name: Run platform test
+        run: bash tests/platform-test.sh fedora dnf
+
+  docker-debian:
+    name: "Docker: Debian"
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: debian:stable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites
+        run: apt-get update && apt-get install -y bash git
+      - name: Run platform test
+        run: bash tests/platform-test.sh debian apt
+
+  docker-arch:
+    name: "Docker: Arch Linux"
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites
+        run: pacman -Sy --noconfirm bash git
+      - name: Run platform test
+        run: bash tests/platform-test.sh arch pacman
+
+  docker-alpine:
+    name: "Docker: Alpine"
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites
+        run: apk add bash git grep sed coreutils
+      - name: Run platform test
+        run: bash tests/platform-test.sh alpine apk
+
+  docker-opensuse:
+    name: "Docker: OpenSUSE"
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: opensuse/tumbleweed:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites
+        run: zypper install -y bash git
+      - name: Run platform test
+        run: bash tests/platform-test.sh opensuse zypper
+
+  docker-rocky:
+    name: "Docker: Rocky Linux"
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux:9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites
+        run: dnf install -y bash git
+      - name: Run platform test
+        run: bash tests/platform-test.sh rocky dnf
+
+  docker-alma:
+    name: "Docker: AlmaLinux"
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites
+        run: dnf install -y bash git
+      - name: Run platform test
+        run: bash tests/platform-test.sh alma dnf
+
+  docker-void:
+    name: "Docker: Void Linux"
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run platform test in Void container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            ghcr.io/void-linux/void-glibc-full:latest \
+            sh -c "xbps-install -Sy bash git && bash tests/platform-test.sh void xbps"
+
+  docker-gentoo:
+    name: "Docker: Gentoo"
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run platform test in Gentoo container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            gentoo/stage3:latest \
+            bash tests/platform-test.sh gentoo emerge
+
+  # ============================================================
+  # FreeBSD via QEMU VM (no Docker image available)
+  # ============================================================
+  vm-freebsd:
+    name: "VM: FreeBSD"
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run platform test in FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "14.2"
+          usesh: true
+          prepare: |
+            pkg install -y bash git
+          run: |
+            bash tests/platform-test.sh freebsd pkg
+
+  # ============================================================
+  # Raspberry Pi OS via QEMU ARM emulation
+  # Uses balenalib image which has ID=raspbian in /etc/os-release
+  # ============================================================
+  qemu-raspberrypios:
+    name: "QEMU ARM: Raspberry Pi OS"
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU for ARM emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm/v7
+      - name: Run platform test in ARM container
+        run: |
+          docker run --rm --platform linux/arm/v7 \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            balenalib/raspberry-pi-debian:bookworm-run \
+            bash -c "apt-get update && apt-get install -y git && bash tests/platform-test.sh raspberrypios apt"
+
+  # ============================================================
+  # E2E simulation
+  # ============================================================
+  e2e:
+    name: E2E Simulation
+    needs: [unit-tests, native-ubuntu]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-crypt gnupg restic
+      - name: Run E2E test
+        run: |
+          export TEST_HOME=/tmp/test-machine
+          mkdir -p "$TEST_HOME"
+          bash tests/e2e/test-fresh-setup.sh
+
+  # ============================================================
+  # Standalone bootstrap test (simulates curl | bash)
+  # ============================================================
+  standalone-bootstrap:
+    name: Standalone Bootstrap
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test standalone mode
+        run: |
+          # Copy setup.sh to a temp location (outside the repo)
+          cp setup.sh /tmp/setup-standalone.sh
+          chmod +x /tmp/setup-standalone.sh
+
+          # Point it at the local repo as if it were a remote
+          export MACHINE_SETUP_REPO="${GITHUB_WORKSPACE}"
+          export MACHINE_SETUP_DIR="/tmp/test-machine-setup"
+
+          # Run from outside the repo — should clone and dry-run
+          cd /tmp
+          bash /tmp/setup-standalone.sh --dry-run --no-syncthing --no-backup
+
+          # Verify it cloned the repo
+          test -d /tmp/test-machine-setup/.git
+          echo "✅ Standalone bootstrap works"
+
+  # ============================================================
+  # Summary gate (use as required status check)
+  # ============================================================
+  ci-pass:
+    name: CI Pass
+    if: always()
+    needs:
+      - lint
+      - unit-tests
+      - platform-package-defs
+      - native-ubuntu
+      - native-macos
+      - native-windows
+      - docker-fedora
+      - docker-debian
+      - docker-arch
+      - docker-alpine
+      - docker-opensuse
+      - docker-rocky
+      - docker-alma
+      - docker-void
+      - docker-gentoo
+      - vm-freebsd
+      - qemu-raspberrypios
+      - e2e
+      - standalone-bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs
+        run: |
+          results=(
+            "${{ needs.lint.result }}"
+            "${{ needs.unit-tests.result }}"
+            "${{ needs.platform-package-defs.result }}"
+            "${{ needs.native-ubuntu.result }}"
+            "${{ needs.native-macos.result }}"
+            "${{ needs.native-windows.result }}"
+            "${{ needs.docker-fedora.result }}"
+            "${{ needs.docker-debian.result }}"
+            "${{ needs.docker-arch.result }}"
+            "${{ needs.docker-alpine.result }}"
+            "${{ needs.docker-opensuse.result }}"
+            "${{ needs.docker-rocky.result }}"
+            "${{ needs.docker-alma.result }}"
+            "${{ needs.docker-void.result }}"
+            "${{ needs.docker-gentoo.result }}"
+            "${{ needs.vm-freebsd.result }}"
+            "${{ needs.qemu-raspberrypios.result }}"
+            "${{ needs.e2e.result }}"
+            "${{ needs.standalone-bootstrap.result }}"
+          )
+
+          failed=0
+          for r in "${results[@]}"; do
+            if [[ "$r" != "success" && "$r" != "skipped" ]]; then
+              echo "❌ Job failed with result: $r"
+              failed=1
+            fi
+          done
+
+          if [[ $failed -eq 1 ]]; then
+            echo ""
+            echo "❌ Some CI jobs failed"
+            exit 1
+          fi
+
+          echo "✅ All CI jobs passed"

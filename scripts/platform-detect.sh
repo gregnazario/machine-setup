@@ -20,6 +20,11 @@ detect_platform() {
         PLATFORM="freebsd"
         PACKAGE_MANAGER="pkg"
     elif [[ "$(uname -r)" == *"Microsoft"* ]] || [[ "$(uname -r)" == *"microsoft"* ]]; then
+        # WSL
+        PLATFORM="windows"
+        PACKAGE_MANAGER="winget"
+    elif [[ "$(uname -s)" == MINGW* ]] || [[ "$(uname -s)" == MSYS* ]] || [[ "$(uname -s)" == CYGWIN* ]]; then
+        # Native Windows (Git Bash / MSYS2 / Cygwin)
         PLATFORM="windows"
         PACKAGE_MANAGER="winget"
     elif [[ -f /etc/os-release ]]; then

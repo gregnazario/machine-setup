@@ -67,9 +67,7 @@ echo "✅ Package collection: $(echo "$PACKAGES" | wc -w) packages"
 
 # Test dry-run setup
 echo "Testing dry-run setup..."
-./setup.sh --dry-run --no-syncthing --no-backup --profile minimal > /tmp/setup-dry-run.log 2>&1
-
-if [[ $? -ne 0 ]]; then
+if ! ./setup.sh --dry-run --no-syncthing --no-backup --profile minimal > /tmp/setup-dry-run.log 2>&1; then
     echo "❌ FAIL: Dry-run setup failed"
     cat /tmp/setup-dry-run.log
     exit 1
@@ -91,7 +89,7 @@ else
 fi
 
 # Test backup configuration
-if [[ -f "backup/restic-config.yaml" ]]; then
+if [[ -f "backup/restic-config.conf" ]]; then
     echo "✅ Backup configuration exists"
 else
     echo "❌ FAIL: Backup configuration not found"

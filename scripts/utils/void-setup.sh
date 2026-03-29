@@ -4,7 +4,6 @@ set -euo pipefail
 # Void Linux Platform Setup Script
 # Configures XBPS repositories and runit services
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=false
 
 log_info() {
@@ -161,7 +160,7 @@ configure_hostname() {
     fi
     
     if [[ ! -f /etc/hostname ]]; then
-        read -p "Enter hostname [void]: " hostname
+        read -rp "Enter hostname [void]: " hostname
         hostname=${hostname:-void}
         echo "$hostname" > /etc/hostname
         log_info "Hostname set to: $hostname"

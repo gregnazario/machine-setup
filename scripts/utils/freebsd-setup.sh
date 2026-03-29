@@ -4,7 +4,6 @@ set -euo pipefail
 # FreeBSD Platform Setup Script
 # Configures pkg, ports, and ZFS settings
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=false
 
 log_info() {
@@ -176,7 +175,8 @@ configure_rc_conf() {
     )
     
     for service in "${services[@]}"; do
-        local key=$(echo "$service" | cut -d'=' -f1)
+        local key
+        key=$(echo "$service" | cut -d'=' -f1)
         if ! grep -q "^$key=" "$rc_conf" 2>/dev/null; then
             echo "$service" >> "$rc_conf"
             log_info "Added: $service"
