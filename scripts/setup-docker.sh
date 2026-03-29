@@ -21,7 +21,8 @@ setup_docker() {
         exit 1
     fi
     
-    local user=$(whoami)
+    local user
+    user=$(whoami)
     
     if groups "$user" | grep -q docker; then
         log_info "User $user is already in the docker group"

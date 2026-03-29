@@ -168,13 +168,16 @@ ini_merge() {
 
             if [[ "$key_exists" == true ]]; then
                 # Replace existing key using sed with section range
-                local escaped_key=$(echo "$key" | sed 's/[.[\*^$()+?{|]/\\&/g')
-                local escaped_value=$(echo "$value" | sed 's/[&/\]/\\&/g')
+                local escaped_key
+                escaped_key=$(printf '%s' "$key" | sed 's/[.[\*^$()+?{|]/\\&/g')
+                local escaped_value
+                escaped_value=$(printf '%s' "$value" | sed 's/[&/\]/\\&/g')
                 sed -i.bak "/^\[${current_section}\]/,/^\[/ s/^[[:space:]]*${escaped_key}[[:space:]]*=.*/${key} = ${escaped_value}/" "$tmp_file"
                 rm -f "${tmp_file}.bak"
             else
                 # Add key after section header
-                local escaped_section=$(echo "$current_section" | sed 's/[.[\*^$()+?{|]/\\&/g')
+                local escaped_section
+                escaped_section=$(printf '%s' "$current_section" | sed 's/[.[\*^$()+?{|]/\\&/g')
                 sed -i.bak "/^\[${escaped_section}\]/a\\
 ${key} = ${value}" "$tmp_file"
                 rm -f "${tmp_file}.bak"

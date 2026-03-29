@@ -57,7 +57,8 @@ backup_existing() {
             log_warn "Removing existing: $target"
             rm -rf "$target"
         else
-            local backup="${target}.backup.$(date +%Y%m%d_%H%M%S)"
+            local backup
+            backup="${target}.backup.$(date +%Y%m%d_%H%M%S)"
             log_warn "Backing up existing: $target -> $backup"
             mv "$target" "$backup"
         fi
@@ -75,7 +76,8 @@ create_symlink() {
     
     backup_existing "$target"
     
-    local target_dir=$(dirname "$target")
+    local target_dir
+    target_dir=$(dirname "$target")
     if [[ ! -d "$target_dir" ]]; then
         mkdir -p "$target_dir"
     fi
@@ -85,7 +87,8 @@ create_symlink() {
 }
 
 link_dotfiles() {
-    local dotfiles_source=$(ini_get "$PROFILE_FILE" "dotfiles" "source" "")
+    local dotfiles_source
+    dotfiles_source=$(ini_get "$PROFILE_FILE" "dotfiles" "source" "")
     local dotfiles_dir="${SCRIPT_DIR}/../dotfiles/${dotfiles_source}"
     
     if [[ ! -d "$dotfiles_dir" ]]; then
@@ -97,8 +100,10 @@ link_dotfiles() {
     
     local current_link=1
     while true; do
-        local src=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "src" "")
-        local dest=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "dest" "")
+        local src
+        src=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "src" "")
+        local dest
+        dest=$(ini_get "$PROFILE_FILE" "dotfiles.links.${current_link}" "dest" "")
         
         if [[ -z "$src" || -z "$dest" ]]; then
             break

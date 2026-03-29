@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2086
+# SC2086: $packages is intentionally unquoted — word-splitting feeds
+# multiple package names to the package manager as separate arguments.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -181,16 +184,13 @@ install_packages_zypper() {
 get_mapped_package_name() {
     local package_name="$1"
     local common_file="${SCRIPT_DIR}/../packages/common.conf"
-    local mapped_name
-    local common_content
     local platform_mapped
-    
+
     if [[ ! -f "$common_file" ]]; then
         echo "$package_name"
         return
     fi
-    
-    common_content=$(cat "$common_file")
+
     platform_mapped=$(ini_get "$common_file" "package_mapping.${package_name}" "$PLATFORM" "")
 
     if [[ -n "$platform_mapped" ]]; then

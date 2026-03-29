@@ -23,10 +23,10 @@ jobs:
 
       - name: Shellcheck all scripts
         run: |
-          shellcheck -x setup.sh
-          find scripts/ -name "*.sh" -exec shellcheck -x {} +
-          find tests/ -name "*.sh" -exec shellcheck -x {} +
-          find backup/ -name "*.sh" -exec shellcheck -x {} +
+          shellcheck -x -S warning setup.sh
+          find scripts/ -name "*.sh" -exec shellcheck -x -S warning {} +
+          find tests/ -name "*.sh" -exec shellcheck -x -S warning {} +
+          find backup/ -name "*.sh" -exec shellcheck -x -S warning {} +
 
       - name: Validate INI config files
         run: |

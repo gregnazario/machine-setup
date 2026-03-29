@@ -4,7 +4,6 @@ set -euo pipefail
 # Arch Linux Platform Setup Script
 # Configures pacman, AUR helper, and system settings
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=false
 
 log_info() {
@@ -100,7 +99,8 @@ setup_aur_helper() {
     fi
     
     # Install yay
-    local tmp_dir=$(mktemp -d)
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
     cd "$tmp_dir"
     
     su - "$build_user" -c "git clone https://aur.archlinux.org/yay.git $tmp_dir/yay"
@@ -132,7 +132,8 @@ configure_makepkg() {
     cp "$makepkg_conf" "${makepkg_conf}.backup.$(date +%Y%m%d_%H%M%S)"
     
     # Enable parallel compilation
-    local nproc=$(nproc)
+    local nproc
+    nproc=$(nproc)
     sed -i "s/^#MAKEFLAGS=.*/MAKEFLAGS=\"-j${nproc}\"/" "$makepkg_conf"
     
     # Use all cores for compression

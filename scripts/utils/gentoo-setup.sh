@@ -4,7 +4,6 @@ set -euo pipefail
 # Gentoo Platform Setup Script
 # Configures binpkg, USE flags, and Portage settings
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=false
 
 log_info() {
@@ -53,9 +52,12 @@ setup_binpkg() {
     # Add binpkg features if not present
     if ! grep -q "^FEATURES.*binpkg" "$make_conf" 2>/dev/null; then
         log_info "Enabling binary package features..."
-        echo "" >> "$make_conf"
-        echo "# Binary package support (added by machine-setup)" >> "$make_conf"
-        echo 'FEATURES="${FEATURES} binpkg getbinpkg"' >> "$make_conf"
+        {
+            echo ""
+            echo "# Binary package support (added by machine-setup)"
+            # shellcheck disable=SC2016
+            echo 'FEATURES="${FEATURES} binpkg getbinpkg"'
+        } >> "$make_conf"
     fi
     
     # Configure binhost if not present
@@ -104,9 +106,11 @@ setup_use_flags() {
     # Check if USE line exists
     if ! grep -q "^USE=" "$make_conf" 2>/dev/null; then
         log_info "Adding USE flags configuration..."
-        echo "" >> "$make_conf"
-        echo "# USE flags (added by machine-setup)" >> "$make_conf"
-        echo "USE=\"${use_flags[*]} ${use_flags_disabled[*]}\"" >> "$make_conf"
+        {
+            echo ""
+            echo "# USE flags (added by machine-setup)"
+            echo "USE=\"${use_flags[*]} ${use_flags_disabled[*]}\""
+        } >> "$make_conf"
     else
         log_warn "USE flags already configured, skipping"
     fi
@@ -223,7 +227,8 @@ configure_make_conf() {
     )
     
     for setting in "${settings[@]}"; do
-        local key=$(echo "$setting" | cut -d'=' -f1)
+        local key
+        key=$(echo "$setting" | cut -d'=' -f1)
         if ! grep -q "^$key=" "$make_conf" 2>/dev/null; then
             echo "$setting" >> "$make_conf"
             log_info "Added $key to make.conf"

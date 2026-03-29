@@ -14,22 +14,26 @@ VERBOSE=false
 source "${REPO_ROOT}/scripts/ini-parser.sh"
 
 log_info() {
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [INFO] $1" | tee -a "$LOG_FILE"
 }
 
 log_warn() {
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [WARN] $1" | tee -a "$LOG_FILE" >&2
 }
 
 log_error() {
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [ERROR] $1" | tee -a "$LOG_FILE" >&2
 }
 
 log_success() {
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [SUCCESS] $1" | tee -a "$LOG_FILE"
 }
 
@@ -63,7 +67,7 @@ load_config() {
 "
         ((current++))
     done
-    PATHS=$(echo "$PATHS" | sed "s|~|$HOME|g")
+    PATHS="${PATHS//\~/$HOME}"
     
     # Read excludes
     EXCLUDES=""
