@@ -209,18 +209,22 @@ echo "6. Dry-run setup"
 export HOME="${HOME:-/tmp/test-home}"
 mkdir -p "$HOME"
 
-if bash "${REPO_ROOT}/setup.sh" --dry-run --no-syncthing --no-backup --profile minimal > /tmp/platform-test-dry-run.log 2>&1; then
-    pass "Dry-run (minimal) completed"
+if ! command -v git &> /dev/null; then
+    echo "  (skipped — git not available in this environment)"
 else
-    fail "Dry-run (minimal) failed"
-    cat /tmp/platform-test-dry-run.log
-fi
+    if bash "${REPO_ROOT}/setup.sh" --dry-run --no-syncthing --no-backup --profile minimal > /tmp/platform-test-dry-run.log 2>&1; then
+        pass "Dry-run (minimal) completed"
+    else
+        fail "Dry-run (minimal) failed"
+        cat /tmp/platform-test-dry-run.log
+    fi
 
-if bash "${REPO_ROOT}/setup.sh" --dry-run --no-syncthing --no-backup --profile full > /tmp/platform-test-dry-run.log 2>&1; then
-    pass "Dry-run (full) completed"
-else
-    fail "Dry-run (full) failed"
-    cat /tmp/platform-test-dry-run.log
+    if bash "${REPO_ROOT}/setup.sh" --dry-run --no-syncthing --no-backup --profile full > /tmp/platform-test-dry-run.log 2>&1; then
+        pass "Dry-run (full) completed"
+    else
+        fail "Dry-run (full) failed"
+        cat /tmp/platform-test-dry-run.log
+    fi
 fi
 
 echo ""
