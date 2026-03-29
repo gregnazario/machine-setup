@@ -282,21 +282,22 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
-            voidlinux/voidlinux:latest \
+            ghcr.io/void-linux/void-glibc-full:latest \
             sh -c "xbps-install -Sy bash git && bash tests/platform-test.sh void xbps"
 
   docker-gentoo:
     name: "Docker: Gentoo"
     needs: lint
     runs-on: ubuntu-latest
-    container:
-      image: gentoo/stage3:latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install prerequisites
-        run: emerge --noreplace dev-vcs/git
-      - name: Run platform test
-        run: bash tests/platform-test.sh gentoo emerge
+      - name: Run platform test in Gentoo container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            gentoo/stage3:latest \
+            bash tests/platform-test.sh gentoo emerge
 
   # ============================================================
   # FreeBSD via QEMU VM (no Docker image available)
