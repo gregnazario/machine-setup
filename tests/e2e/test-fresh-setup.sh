@@ -14,7 +14,8 @@ echo "E2E Test: Fresh Machine Setup Simulation"
 echo "========================================="
 
 # Create isolated test environment
-export TEST_HOME="/tmp/test-fresh-machine-$(date +%s)"
+TEST_HOME="/tmp/test-fresh-machine-$(date +%s)"
+export TEST_HOME
 mkdir -p "$TEST_HOME"
 
 echo "Test environment: $TEST_HOME"
@@ -127,9 +128,7 @@ fi
 # Step 9: Dry-run full setup
 echo ""
 echo "Step 9: Running dry-run setup..."
-./setup.sh --dry-run --no-syncthing --no-backup > /tmp/e2e-dry-run.log 2>&1
-
-if [[ $? -ne 0 ]]; then
+if ! ./setup.sh --dry-run --no-syncthing --no-backup > /tmp/e2e-dry-run.log 2>&1; then
     echo "❌ FAIL: Dry-run setup failed"
     cat /tmp/e2e-dry-run.log
     exit 1
