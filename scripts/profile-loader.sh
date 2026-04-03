@@ -9,13 +9,7 @@ source "${SCRIPT_DIR}/ini-parser.sh"
 PROFILE_NAME="${PROFILE_NAME:-}"
 PROFILE_FILE="${PROFILE_FILE:-}"
 
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
+source "${SCRIPT_DIR}/lib/common.sh"
 
 load_profile() {
     local profile_name="$1"

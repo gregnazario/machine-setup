@@ -4,23 +4,9 @@ set -euo pipefail
 # Alpine Linux Platform Setup Script
 # Configures apk and OpenRC services
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
+
 DRY_RUN=false
-
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_warn() {
-    echo -e "\033[0;33m[WARN]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
-
-log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
-}
 
 check_alpine() {
     if [[ ! -f /etc/os-release ]] || ! grep -q "alpine" /etc/os-release; then

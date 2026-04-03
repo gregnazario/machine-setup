@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/common.sh"
+
 SELFHOSTED_DIR="${HOME}/selfhosted"
 BACKUP_STAGING="${HOME}/.selfhosted-backups"
 COMPOSE_FILE="${SELFHOSTED_DIR}/docker-compose.yml"
@@ -8,22 +11,6 @@ COMPOSE_FILE="${SELFHOSTED_DIR}/docker-compose.yml"
 DRY_RUN=false
 ACTION="backup"
 STOP_SERVICES=true
-
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_warn() {
-    echo -e "\033[0;33m[WARN]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
-
-log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
-}
 
 usage() {
     cat <<EOF

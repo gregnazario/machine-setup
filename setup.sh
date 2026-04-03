@@ -212,6 +212,8 @@ main() {
 
     ensure_repo
 
+    source "${REPO_DIR}/scripts/lib/common.sh"
+
     source "${REPO_DIR}/scripts/platform-detect.sh"
     source "${REPO_DIR}/scripts/profile-loader.sh"
 
