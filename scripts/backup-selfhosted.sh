@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELFHOSTED_DIR="${HOME}/selfhosted"
 BACKUP_STAGING="${HOME}/.selfhosted-backups"
 COMPOSE_FILE="${SELFHOSTED_DIR}/docker-compose.yml"
@@ -287,13 +286,13 @@ list_backups() {
 }
 
 migrate_export() {
-    local migrate_dir="${BACKUP_STAGING}/migrate-$(date +%Y%m%d-%H%M%S)"
+    local migrate_dir
+    migrate_dir="${BACKUP_STAGING}/migrate-$(date +%Y%m%d-%H%M%S)"
     mkdir -p "$migrate_dir"
 
     log_info "Creating portable migration bundle..."
 
     # Run a full backup first
-    BACKUP_STAGING_ORIG="$BACKUP_STAGING"
     backup_volumes
 
     # Copy the latest backup into the migrate dir
