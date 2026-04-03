@@ -97,6 +97,9 @@ jobs:
           bash tests/unit/test-dotfiles-linking.sh minimal
           bash tests/unit/test-dotfiles-linking.sh full
 
+      - name: Common library
+        run: bash tests/unit/test-common-lib.sh
+
       - name: Backup configuration
         run: bash tests/unit/test-backup-config.sh
 

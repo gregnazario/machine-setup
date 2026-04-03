@@ -8,21 +8,7 @@ source "${SCRIPT_DIR}/ini-parser.sh"
 CONFIG_FILE="${SCRIPT_DIR}/../backup/restic-config.conf"
 BACKUP_SCRIPT="${SCRIPT_DIR}/../backup/backup.sh"
 
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_warn() {
-    echo -e "\033[0;33m[WARN]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
-
-log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
-}
+source "${SCRIPT_DIR}/lib/common.sh"
 
 check_restic_installed() {
     if ! command -v restic &> /dev/null; then

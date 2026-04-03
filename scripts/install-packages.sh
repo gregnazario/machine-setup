@@ -13,21 +13,7 @@ source "${SCRIPT_DIR}/ini-parser.sh"
 PROFILE="${PROFILE:-}"
 DRY_RUN="${DRY_RUN:-false}"
 
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_warn() {
-    echo -e "\033[0;33m[WARN]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
-
-log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
-}
+source "${SCRIPT_DIR}/lib/common.sh"
 
 parse_args() {
     while [[ $# -gt 0 ]]; do

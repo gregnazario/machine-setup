@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
+
 PLATFORM=""
 PACKAGE_MANAGER=""
-
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
 
 detect_platform() {
     if [[ "$(uname)" == "Darwin" ]]; then
