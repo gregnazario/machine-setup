@@ -4,21 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/platform-detect.sh"
 
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_warn() {
-    echo -e "\033[0;33m[WARN]\033[0m $1"
-}
-
-log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $1"
-}
-
-log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
-}
+source "${SCRIPT_DIR}/lib/common.sh"
 
 check_syncthing_installed() {
     if ! command -v syncthing &> /dev/null; then

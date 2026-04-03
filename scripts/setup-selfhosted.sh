@@ -1,19 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/common.sh"
+
 SELFHOSTED_DIR="${HOME}/selfhosted"
-
-log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $1"
-}
-
-log_warn() {
-    echo -e "\033[0;33m[WARN]\033[0m $1"
-}
-
-log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $1"
-}
 
 setup_env_file() {
     if [[ ! -f "${SELFHOSTED_DIR}/.env" ]]; then
