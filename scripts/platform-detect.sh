@@ -14,9 +14,9 @@ detect_platform() {
         PLATFORM="freebsd"
         PACKAGE_MANAGER="pkg"
     elif [[ "$(uname -r)" == *"Microsoft"* ]] || [[ "$(uname -r)" == *"microsoft"* ]]; then
-        # WSL
-        PLATFORM="windows"
-        PACKAGE_MANAGER="winget"
+        # WSL2 — a full Linux environment; use the native Linux package manager
+        PLATFORM="wsl"
+        PACKAGE_MANAGER="apt"
     elif [[ "$(uname -s)" == MINGW* ]] || [[ "$(uname -s)" == MSYS* ]] || [[ "$(uname -s)" == CYGWIN* ]]; then
         # Native Windows (Git Bash / MSYS2 / Cygwin)
         PLATFORM="windows"
@@ -71,7 +71,7 @@ detect_platform() {
                 ;;
             *)
                 log_error "Unsupported Linux distribution: $ID"
-                log_error "Supported: fedora, ubuntu, debian, gentoo, void, raspbian, arch, alpine, opensuse, rocky, alma"
+                log_error "Supported: fedora, ubuntu, debian, gentoo, void, raspbian, arch, alpine, opensuse, rocky, alma, wsl"
                 exit 1
                 ;;
         esac

@@ -131,6 +131,7 @@ jobs:
           - macos
           - freebsd
           - windows
+          - wsl
     steps:
       - uses: actions/checkout@v4
       - name: Validate ${{ matrix.platform }} package definitions
