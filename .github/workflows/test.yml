@@ -103,6 +103,9 @@ jobs:
       - name: Backup configuration
         run: bash tests/unit/test-backup-config.sh
 
+      - name: INI parser
+        run: bash tests/unit/test-ini-parser.sh
+
   # ============================================================
   # Package definition validation for every platform
   # ============================================================

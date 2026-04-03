@@ -33,7 +33,7 @@ ini_get() {
             local found_value="${BASH_REMATCH[2]}"
             # Trim whitespace
             found_key=$(echo "$found_key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            found_value=$(echo "$found_value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            found_value=$(echo "$found_value" | sed 's/[[:space:]][#;].*//;s/^[[:space:]]*//;s/[[:space:]]*$//')
 
             if [[ "$found_key" == "$key" ]]; then
                 value="$found_value"
@@ -72,7 +72,7 @@ ini_get_list() {
             local found_key="${BASH_REMATCH[1]}"
             local found_value="${BASH_REMATCH[2]}"
             found_key=$(echo "$found_key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            found_value=$(echo "$found_value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            found_value=$(echo "$found_value" | sed 's/[[:space:]][#;].*//;s/^[[:space:]]*//;s/[[:space:]]*$//')
 
             if [[ "$found_key" == "$key" ]]; then
                 echo "$found_value"
