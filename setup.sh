@@ -75,6 +75,7 @@ Supported Platforms:
     - macOS (homebrew)
     - FreeBSD (pkg)
     - Windows 11 (winget)
+    - WSL2 (apt)
 EOF
 }
 
