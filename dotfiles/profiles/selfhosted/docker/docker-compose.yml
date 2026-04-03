@@ -1,0 +1,488 @@
+services:
+
+  # --- Reverse Proxy ---
+  traefik:
+    image: traefik:v3
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certs:/letsencrypt
+    networks:
+      - proxy
+
+  # --- Password Manager ---
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      - DOMAIN=https://vault.${DOMAIN}
+      - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS:-false}
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+    volumes:
+      - vaultwarden-data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.vaultwarden.rule=Host(`vault.${DOMAIN}`)
+      - traefik.http.routers.vaultwarden.entrypoints=websecure
+      - traefik.http.routers.vaultwarden.tls.certresolver=letsencrypt
+      - traefik.http.routers.vaultwarden.middlewares=authentik@docker
+    networks:
+      - proxy
+
+  # --- Home Automation ---
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TZ=${TIMEZONE}
+    volumes:
+      - homeassistant-config:/config
+    # Access on port 8123 via host network
+
+  # --- Photo Management ---
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich-server
+    restart: unless-stopped
+    environment:
+      - DB_HOSTNAME=immich-postgres
+      - DB_USERNAME=${IMMICH_DB_USER:-immich}
+      - DB_PASSWORD=${IMMICH_DB_PASSWORD}
+      - DB_DATABASE_NAME=${IMMICH_DB_NAME:-immich}
+      - REDIS_HOSTNAME=immich-redis
+    volumes:
+      - ${IMMICH_UPLOAD_PATH:-./immich-uploads}:/usr/src/app/upload
+    depends_on:
+      - immich-redis
+      - immich-postgres
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.immich.rule=Host(`photos.${DOMAIN}`)
+      - traefik.http.routers.immich.entrypoints=websecure
+      - traefik.http.routers.immich.tls.certresolver=letsencrypt
+      - traefik.http.services.immich.loadbalancer.server.port=2283
+      - traefik.http.routers.immich.middlewares=authentik@docker
+    networks:
+      - proxy
+      - immich-internal
+
+  immich-redis:
+    image: redis:7-alpine
+    container_name: immich-redis
+    restart: unless-stopped
+    volumes:
+      - immich-redis-data:/data
+    networks:
+      - immich-internal
+
+  immich-postgres:
+    image: tensorchord/pgvecto-rs:pg16-v0.2.0
+    container_name: immich-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${IMMICH_DB_USER:-immich}
+      - POSTGRES_PASSWORD=${IMMICH_DB_PASSWORD}
+      - POSTGRES_DB=${IMMICH_DB_NAME:-immich}
+    volumes:
+      - immich-postgres-data:/var/lib/postgresql/data
+    networks:
+      - immich-internal
+
+  # --- Docker Management ---
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer-data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)
+      - traefik.http.routers.portainer.entrypoints=websecure
+      - traefik.http.routers.portainer.tls.certresolver=letsencrypt
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+      - traefik.http.routers.portainer.middlewares=authentik@docker
+    networks:
+      - proxy
+
+  # --- Monitoring ---
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - uptime-kuma-data:/app/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.uptime.rule=Host(`status.${DOMAIN}`)
+      - traefik.http.routers.uptime.entrypoints=websecure
+      - traefik.http.routers.uptime.tls.certresolver=letsencrypt
+      - traefik.http.routers.uptime.middlewares=authentik@docker
+    networks:
+      - proxy
+
+  # --- Matrix Chat ---
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: synapse
+    restart: unless-stopped
+    environment:
+      - SYNAPSE_SERVER_NAME=${DOMAIN}
+      - SYNAPSE_REPORT_STATS=no
+    volumes:
+      - synapse-data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.matrix.rule=Host(`matrix.${DOMAIN}`)
+      - traefik.http.routers.matrix.entrypoints=websecure
+      - traefik.http.routers.matrix.tls.certresolver=letsencrypt
+      - traefik.http.services.matrix.loadbalancer.server.port=8008
+      - traefik.http.routers.matrix.middlewares=authentik@docker
+    networks:
+      - proxy
+
+  element-web:
+    image: vectorim/element-web:latest
+    container_name: element-web
+    restart: unless-stopped
+    volumes:
+      - ./element-config.json:/app/config.json:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.element.rule=Host(`chat.${DOMAIN}`)
+      - traefik.http.routers.element.entrypoints=websecure
+      - traefik.http.routers.element.tls.certresolver=letsencrypt
+      - traefik.http.routers.element.middlewares=authentik@docker
+    networks:
+      - proxy
+
+  # --- SSO / Authentication ---
+  authentik-server:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    environment:
+      - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
+      - AUTHENTIK_REDIS__HOST=authentik-redis
+      - AUTHENTIK_POSTGRESQL__HOST=authentik-postgres
+      - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_DB_USER:-authentik}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_DB_PASSWORD}
+      - AUTHENTIK_POSTGRESQL__NAME=${AUTHENTIK_DB_NAME:-authentik}
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+    depends_on:
+      - authentik-postgres
+      - authentik-redis
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.authentik.rule=Host(`auth.${DOMAIN}`)
+      - traefik.http.routers.authentik.entrypoints=websecure
+      - traefik.http.routers.authentik.tls.certresolver=letsencrypt
+      # Forward-auth middleware for other services
+      - traefik.http.middlewares.authentik.forwardauth.address=http://authentik-server:9000/outpost.goauthentik.io/auth/traefik
+      - traefik.http.middlewares.authentik.forwardauth.trustForwardHeader=true
+      - traefik.http.middlewares.authentik.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version
+    networks:
+      - proxy
+      - authentik-internal
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
+      - AUTHENTIK_REDIS__HOST=authentik-redis
+      - AUTHENTIK_POSTGRESQL__HOST=authentik-postgres
+      - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_DB_USER:-authentik}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_DB_PASSWORD}
+      - AUTHENTIK_POSTGRESQL__NAME=${AUTHENTIK_DB_NAME:-authentik}
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+    depends_on:
+      - authentik-postgres
+      - authentik-redis
+    networks:
+      - authentik-internal
+
+  authentik-postgres:
+    image: postgres:16-alpine
+    container_name: authentik-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${AUTHENTIK_DB_USER:-authentik}
+      - POSTGRES_PASSWORD=${AUTHENTIK_DB_PASSWORD}
+      - POSTGRES_DB=${AUTHENTIK_DB_NAME:-authentik}
+    volumes:
+      - authentik-postgres-data:/var/lib/postgresql/data
+    networks:
+      - authentik-internal
+
+  authentik-redis:
+    image: redis:7-alpine
+    container_name: authentik-redis
+    restart: unless-stopped
+    volumes:
+      - authentik-redis-data:/data
+    networks:
+      - authentik-internal
+
+  # --- DNS Ad Blocking ---
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3000:3000"   # Initial setup UI (disable after config)
+    volumes:
+      - adguard-work:/opt/adguardhome/work
+      - adguard-conf:/opt/adguardhome/conf
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.adguard.rule=Host(`dns.${DOMAIN}`)
+      - traefik.http.routers.adguard.entrypoints=websecure
+      - traefik.http.routers.adguard.tls.certresolver=letsencrypt
+      - traefik.http.services.adguard.loadbalancer.server.port=3000
+      - traefik.http.routers.adguard.middlewares=authentik@docker
+    networks:
+      - proxy
+
+  # --- Document Management ---
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless
+    restart: unless-stopped
+    environment:
+      - PAPERLESS_REDIS=redis://paperless-redis:6379
+      - PAPERLESS_DBENGINE=postgresql
+      - PAPERLESS_DBHOST=paperless-postgres
+      - PAPERLESS_DBUSER=${PAPERLESS_DB_USER:-paperless}
+      - PAPERLESS_DBPASS=${PAPERLESS_DB_PASSWORD}
+      - PAPERLESS_DBNAME=${PAPERLESS_DB_NAME:-paperless}
+      - PAPERLESS_URL=https://docs.${DOMAIN}
+      - PAPERLESS_SECRET_KEY=${PAPERLESS_SECRET_KEY}
+      - PAPERLESS_TIME_ZONE=${TIMEZONE}
+      - PAPERLESS_OCR_LANGUAGE=eng
+    volumes:
+      - paperless-data:/usr/src/paperless/data
+      - paperless-media:/usr/src/paperless/media
+      - ${PAPERLESS_CONSUME_PATH:-./paperless-consume}:/usr/src/paperless/consume
+    depends_on:
+      - paperless-postgres
+      - paperless-redis
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.paperless.rule=Host(`docs.${DOMAIN}`)
+      - traefik.http.routers.paperless.entrypoints=websecure
+      - traefik.http.routers.paperless.tls.certresolver=letsencrypt
+      - traefik.http.services.paperless.loadbalancer.server.port=8000
+      - traefik.http.routers.paperless.middlewares=authentik@docker
+    networks:
+      - proxy
+      - paperless-internal
+
+  paperless-postgres:
+    image: postgres:16-alpine
+    container_name: paperless-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${PAPERLESS_DB_USER:-paperless}
+      - POSTGRES_PASSWORD=${PAPERLESS_DB_PASSWORD}
+      - POSTGRES_DB=${PAPERLESS_DB_NAME:-paperless}
+    volumes:
+      - paperless-postgres-data:/var/lib/postgresql/data
+    networks:
+      - paperless-internal
+
+  paperless-redis:
+    image: redis:7-alpine
+    container_name: paperless-redis
+    restart: unless-stopped
+    volumes:
+      - paperless-redis-data:/data
+    networks:
+      - paperless-internal
+
+  # --- Cloud Storage / Calendar / Contacts ---
+  nextcloud:
+    image: nextcloud:stable
+    container_name: nextcloud
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=nextcloud-postgres
+      - POSTGRES_USER=${NEXTCLOUD_DB_USER:-nextcloud}
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - POSTGRES_DB=${NEXTCLOUD_DB_NAME:-nextcloud}
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER:-admin}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=cloud.${DOMAIN}
+      - OVERWRITEPROTOCOL=https
+      - OVERWRITEHOST=cloud.${DOMAIN}
+      - REDIS_HOST=nextcloud-redis
+    volumes:
+      - nextcloud-html:/var/www/html
+      - ${NEXTCLOUD_DATA_PATH:-./nextcloud-data}:/var/www/html/data
+    depends_on:
+      - nextcloud-postgres
+      - nextcloud-redis
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nextcloud.rule=Host(`cloud.${DOMAIN}`)
+      - traefik.http.routers.nextcloud.entrypoints=websecure
+      - traefik.http.routers.nextcloud.tls.certresolver=letsencrypt
+      - traefik.http.routers.nextcloud.middlewares=nextcloud-headers,authentik@docker
+      - traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=31536000
+      - traefik.http.middlewares.nextcloud-headers.headers.customRequestHeaders.X-Forwarded-Proto=https
+    networks:
+      - proxy
+      - nextcloud-internal
+
+  nextcloud-postgres:
+    image: postgres:16-alpine
+    container_name: nextcloud-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${NEXTCLOUD_DB_USER:-nextcloud}
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - POSTGRES_DB=${NEXTCLOUD_DB_NAME:-nextcloud}
+    volumes:
+      - nextcloud-postgres-data:/var/lib/postgresql/data
+    networks:
+      - nextcloud-internal
+
+  nextcloud-redis:
+    image: redis:7-alpine
+    container_name: nextcloud-redis
+    restart: unless-stopped
+    volumes:
+      - nextcloud-redis-data:/data
+    networks:
+      - nextcloud-internal
+
+  # --- Push Notifications ---
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    restart: unless-stopped
+    command: serve
+    environment:
+      - NTFY_BASE_URL=https://notify.${DOMAIN}
+      - NTFY_BEHIND_PROXY=true
+      - NTFY_AUTH_DEFAULT_ACCESS=deny-all
+    volumes:
+      - ntfy-cache:/var/cache/ntfy
+      - ntfy-data:/var/lib/ntfy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ntfy.rule=Host(`notify.${DOMAIN}`)
+      - traefik.http.routers.ntfy.entrypoints=websecure
+      - traefik.http.routers.ntfy.tls.certresolver=letsencrypt
+      - traefik.http.services.ntfy.loadbalancer.server.port=80
+    networks:
+      - proxy
+
+  # --- Recipe Management ---
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:latest
+    container_name: mealie
+    restart: unless-stopped
+    environment:
+      - ALLOW_SIGNUP=false
+      - TZ=${TIMEZONE}
+      - BASE_URL=https://recipes.${DOMAIN}
+      - DB_ENGINE=postgres
+      - POSTGRES_SERVER=mealie-postgres
+      - POSTGRES_USER=${MEALIE_DB_USER:-mealie}
+      - POSTGRES_PASSWORD=${MEALIE_DB_PASSWORD}
+      - POSTGRES_DB=${MEALIE_DB_NAME:-mealie}
+    volumes:
+      - mealie-data:/app/data
+    depends_on:
+      - mealie-postgres
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.mealie.rule=Host(`recipes.${DOMAIN}`)
+      - traefik.http.routers.mealie.entrypoints=websecure
+      - traefik.http.routers.mealie.tls.certresolver=letsencrypt
+      - traefik.http.services.mealie.loadbalancer.server.port=9000
+      - traefik.http.routers.mealie.middlewares=authentik@docker
+    networks:
+      - proxy
+      - mealie-internal
+
+  mealie-postgres:
+    image: postgres:16-alpine
+    container_name: mealie-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${MEALIE_DB_USER:-mealie}
+      - POSTGRES_PASSWORD=${MEALIE_DB_PASSWORD}
+      - POSTGRES_DB=${MEALIE_DB_NAME:-mealie}
+    volumes:
+      - mealie-postgres-data:/var/lib/postgresql/data
+    networks:
+      - mealie-internal
+
+volumes:
+  traefik-certs:
+  vaultwarden-data:
+  homeassistant-config:
+  immich-redis-data:
+  immich-postgres-data:
+  portainer-data:
+  uptime-kuma-data:
+  synapse-data:
+  authentik-media:
+  authentik-templates:
+  authentik-postgres-data:
+  authentik-redis-data:
+  adguard-work:
+  adguard-conf:
+  paperless-data:
+  paperless-media:
+  paperless-postgres-data:
+  paperless-redis-data:
+  nextcloud-html:
+  nextcloud-postgres-data:
+  nextcloud-redis-data:
+  ntfy-cache:
+  ntfy-data:
+  mealie-data:
+  mealie-postgres-data:
+
+networks:
+  proxy:
+    name: proxy
+  immich-internal:
+    name: immich-internal
+  authentik-internal:
+    name: authentik-internal
+  paperless-internal:
+    name: paperless-internal
+  nextcloud-internal:
+    name: nextcloud-internal
+  mealie-internal:
+    name: mealie-internal
