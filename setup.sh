@@ -58,7 +58,11 @@ Options:
     --remote <user@host>     Run setup on a remote machine via SSH
     --fleet <action>         Manage fleet of machines (register, list, setup, setup-all)
     --audit [count]          Show recent audit log entries (default: 20)
+    --gpg <action>           Manage GPG keys (import, export, list, status)
+    --verify-backup          Verify backup integrity and recency
+    --detect-conflicts       Detect dotfile conflicts and broken symlinks
     --status                 Show status dashboard of current setup
+    --serve [--port <n>]     Start web status dashboard (default port: 8080)
     -i, --interactive        Interactive setup wizard
     -h, --help               Show this help message
 
@@ -303,6 +307,17 @@ PROFILE_EOF
                 bash "${REPO_DIR}/scripts/secrets/secrets-manager.sh" "$@"
                 exit $?
                 ;;
+            --gpg)
+                if [[ $# -lt 2 ]]; then
+                    echo "Error: --gpg requires an action (import, export, list, status)"
+                    exit 1
+                fi
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/gpg-manager.sh" "$@"
+                exit $?
+                ;;
             --fleet)
                 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
                 ensure_repo
@@ -325,11 +340,31 @@ PROFILE_EOF
                 bash "${REPO_DIR}/scripts/status-dashboard.sh" "$@"
                 exit $?
                 ;;
+            --serve)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/web-dashboard.sh" "$@"
+                exit $?
+                ;;
             --remote)
                 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
                 ensure_repo
                 shift
                 bash "${REPO_DIR}/scripts/remote-setup.sh" "$@"
+                exit $?
+                ;;
+            --verify-backup)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                bash "${REPO_DIR}/scripts/verify-backup.sh"
+                exit $?
+                ;;
+            --detect-conflicts)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/detect-conflicts.sh" "$@"
                 exit $?
                 ;;
             --interactive|-i)

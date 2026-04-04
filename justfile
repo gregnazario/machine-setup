@@ -97,6 +97,24 @@ secrets-rotate-one name *ARGS:
 secrets-set-provider provider:
     bash setup.sh --secrets set-provider {{provider}}
 
+# === GPG ===
+
+# Import a GPG key and add to git-crypt
+gpg-import keyfile:
+    bash setup.sh --gpg import {{keyfile}}
+
+# Export public GPG key
+gpg-export *ARGS:
+    bash setup.sh --gpg export {{ARGS}}
+
+# List GPG keys and git-crypt status
+gpg-list:
+    bash setup.sh --gpg list
+
+# Show GPG key status and expiry
+gpg-status:
+    bash setup.sh --gpg status
+
 # === Fleet ===
 
 # Manage fleet of machines (register, list, setup, setup-all, remove)
@@ -119,6 +137,14 @@ audit count="20":
 
 # === Health & Status ===
 
+# Verify backup integrity and recency
+verify-backup:
+    bash setup.sh --verify-backup
+
+# Detect dotfile conflicts and broken symlinks
+detect-conflicts profile="auto":
+    bash setup.sh --detect-conflicts --profile {{profile}}
+
 # Show full status dashboard
 status profile="auto":
     bash setup.sh --status --profile {{profile}}
@@ -126,6 +152,10 @@ status profile="auto":
 # Run health check
 check profile="auto":
     bash setup.sh --check --profile {{profile}}
+
+# Start web status dashboard
+serve port="8080" profile="auto":
+    PROFILE={{profile}} bash setup.sh --serve --port {{port}}
 
 # === Testing ===
 
