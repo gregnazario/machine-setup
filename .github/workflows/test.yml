@@ -16,7 +16,7 @@ jobs:
     name: Lint & Validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
@@ -77,7 +77,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -116,7 +116,7 @@ jobs:
           - nixos
           - termux
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Init bats submodules
@@ -153,9 +153,9 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Cache apt packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /var/cache/apt/archives
           key: apt-ubuntu-${{ hashFiles('packages/platforms/ubuntu.conf', 'packages/common.conf') }}
@@ -173,9 +173,9 @@ jobs:
     needs: lint
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Cache Homebrew
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/Library/Caches/Homebrew
@@ -196,7 +196,7 @@ jobs:
     needs: lint
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run platform detection
         shell: bash
         run: |
@@ -219,7 +219,7 @@ jobs:
     container:
       image: fedora:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install prerequisites
         run: dnf install -y bash git findutils
       - name: Run platform test
@@ -232,7 +232,7 @@ jobs:
     container:
       image: debian:stable
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install prerequisites
         run: apt-get update && apt-get install -y bash git
       - name: Run platform test
@@ -245,7 +245,7 @@ jobs:
     container:
       image: archlinux:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install prerequisites
         run: pacman -Sy --noconfirm bash git
       - name: Run platform test
@@ -258,7 +258,7 @@ jobs:
     container:
       image: alpine:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install prerequisites
         run: apk add bash git grep sed coreutils
       - name: Run platform test
@@ -271,7 +271,7 @@ jobs:
     container:
       image: opensuse/tumbleweed:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install prerequisites
         run: zypper install -y bash git
       - name: Run platform test
@@ -284,7 +284,7 @@ jobs:
     container:
       image: rockylinux:9
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install prerequisites
         run: dnf install -y bash git
       - name: Run platform test
@@ -297,7 +297,7 @@ jobs:
     container:
       image: almalinux:9
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install prerequisites
         run: dnf install -y bash git
       - name: Run platform test
@@ -308,7 +308,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run platform test in Void container
         run: |
           docker run --rm \
@@ -322,7 +322,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run platform test in Gentoo container
         run: |
           docker run --rm \
@@ -336,7 +336,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run platform test in NixOS container
         run: |
           docker run --rm \
@@ -360,7 +360,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run platform test in FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
@@ -380,9 +380,9 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up QEMU for ARM emulation
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: linux/arm/v7
       - name: Run platform test in ARM container
@@ -401,9 +401,9 @@ jobs:
     needs: [unit-tests, native-ubuntu]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Cache apt packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /var/cache/apt/archives
           key: apt-e2e-${{ hashFiles('packages/platforms/ubuntu.conf', 'packages/common.conf') }}
@@ -427,7 +427,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Test standalone mode
         run: |
           # Copy setup.sh to a temp location (outside the repo)
