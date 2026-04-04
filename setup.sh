@@ -389,8 +389,7 @@ main() {
 
     # Install shell completions
     if [[ "$DRY_RUN" == false ]]; then
-        source "${REPO_DIR}/scripts/install-completions.sh"
-        detect_and_install
+        bash "${REPO_DIR}/scripts/install-completions.sh"
     fi
 
     if [[ "$DRY_RUN" == true ]]; then
