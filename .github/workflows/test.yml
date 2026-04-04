@@ -106,6 +106,12 @@ jobs:
       - name: INI parser
         run: bash tests/unit/test-ini-parser.sh
 
+      - name: Idempotency
+        run: |
+          export HOME=/tmp/test-idempotency
+          mkdir -p "$HOME"
+          bash tests/unit/test-idempotency.sh
+
   # ============================================================
   # Package definition validation for every platform
   # ============================================================
