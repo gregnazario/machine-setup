@@ -182,10 +182,6 @@ parse_args() {
                 show_profile "$2"
                 exit 0
                 ;;
-            -h|--help)
-                usage
-                exit 0
-                ;;
             *)
                 echo "Error: Unknown option: $1"
                 usage
@@ -205,6 +201,14 @@ check_prerequisites() {
 }
 
 main() {
+    # Fast-path: --help needs nothing sourced
+    for arg in "$@"; do
+        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+            usage
+            exit 0
+        fi
+    done
+
     parse_args "$@"
 
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
