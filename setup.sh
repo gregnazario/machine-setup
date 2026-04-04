@@ -57,6 +57,7 @@ Options:
     --secrets <action>       Manage secrets (pull, push, list, status, init, set-provider)
     --remote <user@host>     Run setup on a remote machine via SSH
     --fleet <action>         Manage fleet of machines (register, list, setup, setup-all)
+    --audit [count]          Show recent audit log entries (default: 20)
     --status                 Show status dashboard of current setup
     -i, --interactive        Interactive setup wizard
     -h, --help               Show this help message
@@ -309,6 +310,14 @@ PROFILE_EOF
                 bash "${REPO_DIR}/scripts/fleet-manager.sh" "$@"
                 exit $?
                 ;;
+            --audit)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                source "${REPO_DIR}/scripts/audit-log.sh"
+                shift
+                audit_show "${1:-20}"
+                exit 0
+                ;;
             --status)
                 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
                 ensure_repo
@@ -371,6 +380,9 @@ main() {
 
     detect_platform
     log_info "Detected platform: $PLATFORM"
+
+    source "${REPO_DIR}/scripts/audit-log.sh"
+    audit_setup_start "$@"
 
     if [[ "$PROFILE" == "auto" ]]; then
         PROFILE=$(get_default_profile_for_platform)
@@ -442,6 +454,8 @@ main() {
     if [[ "$DRY_RUN" == true ]]; then
         bash "${REPO_DIR}/scripts/dry-run-diff.sh" --profile "$PROFILE"
     fi
+
+    audit_setup_complete "profile=$PROFILE platform=$PLATFORM"
 
     log_success "Setup complete!"
 

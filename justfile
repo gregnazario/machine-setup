@@ -89,6 +89,26 @@ secrets-init:
 secrets-set-provider provider:
     bash setup.sh --secrets set-provider {{provider}}
 
+# === Fleet ===
+
+# Manage fleet of machines (register, list, setup, setup-all, remove)
+fleet *ARGS:
+    bash setup.sh --fleet {{ARGS}}
+
+# List all fleet machines
+fleet-list:
+    bash setup.sh --fleet list
+
+# Run setup on all fleet machines
+fleet-setup-all:
+    bash setup.sh --fleet setup-all
+
+# === Audit ===
+
+# Show recent audit log entries
+audit count="20":
+    bash setup.sh --audit {{count}}
+
 # === Health & Status ===
 
 # Show full status dashboard
