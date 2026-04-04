@@ -26,12 +26,18 @@ setup() {
 
 @test "man page contains all major options" {
     # Render the man page to plain text, stripping backspace formatting
+    # col may not be available on all CI images, so use sed as fallback
+    local strip_cmd="col -bx"
+    if ! command -v col &>/dev/null; then
+        strip_cmd="sed 's/.//g'"
+    fi
+
     if command -v mandoc &>/dev/null; then
-        run bash -c "mandoc -Tascii '$REPO_ROOT/docs/setup.sh.1' | col -bx"
+        run bash -c "mandoc -Tascii '$REPO_ROOT/docs/setup.sh.1' | $strip_cmd"
     elif command -v nroff &>/dev/null; then
-        run bash -c "nroff -man '$REPO_ROOT/docs/setup.sh.1' | col -bx"
+        run bash -c "nroff -man '$REPO_ROOT/docs/setup.sh.1' | $strip_cmd"
     elif command -v groff &>/dev/null; then
-        run bash -c "groff -man -Tascii '$REPO_ROOT/docs/setup.sh.1' | col -bx"
+        run bash -c "groff -man -Tascii '$REPO_ROOT/docs/setup.sh.1' | $strip_cmd"
     else
         skip "no troff processor available"
     fi

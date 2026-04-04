@@ -64,7 +64,7 @@ install_zsh_completion() {
     # Also check fpath for existing completion dirs
     if [[ -n "${FPATH:-}" ]]; then
         local user_fpath
-        user_fpath=$(echo "$FPATH" | tr ':' '\n' | grep "$HOME" | head -1)
+        user_fpath=$(echo "$FPATH" | tr ':' '\n' | grep "$HOME" | head -1 || true)
         if [[ -n "$user_fpath" ]]; then
             target_dirs=("$user_fpath" "${target_dirs[@]}")
         fi
@@ -150,19 +150,15 @@ install_all() {
 
 main() {
     local all=false
+    local mode=""
+    # Parse all flags first so --dry-run is order-independent
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --all)
-                all=true
-                shift
-                ;;
-            --dry-run)
-                DRY_RUN=true
-                shift
-                ;;
-            --bash) install_bash_completion; exit 0 ;;
-            --zsh) install_zsh_completion; exit 0 ;;
-            --fish) install_fish_completion; exit 0 ;;
+            --all) all=true; shift ;;
+            --dry-run) DRY_RUN=true; shift ;;
+            --bash) mode="bash"; shift ;;
+            --zsh) mode="zsh"; shift ;;
+            --fish) mode="fish"; shift ;;
             *)
                 log_error "Unknown option: $1"
                 echo "Usage: $0 [--all|--bash|--zsh|--fish] [--dry-run]"
@@ -171,11 +167,19 @@ main() {
         esac
     done
 
-    if [[ "$all" == true ]]; then
-        install_all
-    else
-        detect_and_install
-    fi
+    # Execute based on parsed mode
+    case "$mode" in
+        bash) install_bash_completion ;;
+        zsh) install_zsh_completion ;;
+        fish) install_fish_completion ;;
+        *)
+            if [[ "$all" == true ]]; then
+                install_all
+            else
+                detect_and_install
+            fi
+            ;;
+    esac
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
