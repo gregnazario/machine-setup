@@ -53,6 +53,7 @@ Options:
     --create-profile <name>  Create a new profile from template
     --unlink                 Remove dotfile symlinks (use with --profile)
     --check                  Check health of current setup (use with --profile)
+    --secrets <action>       Manage secrets (pull, push, list, status, init, set-provider)
     --status                 Show status dashboard of current setup
     -i, --interactive        Interactive setup wizard
     -h, --help               Show this help message
@@ -277,6 +278,17 @@ PROFILE_EOF
                 echo "Edit it to customize, then run: $0 --validate-profile $new_profile"
                 exit 0
                 ;;
+            --secrets)
+                if [[ $# -lt 2 ]]; then
+                    echo "Error: --secrets requires an action (pull, push, list, status, init, set-provider)"
+                    exit 1
+                fi
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/secrets/secrets-manager.sh" "$@"
+                exit $?
+                ;;
             --status)
                 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
                 ensure_repo
@@ -342,6 +354,14 @@ main() {
     log_info "Using profile: $PROFILE"
 
     check_prerequisites
+
+    # Auto-pull secrets if secrets.conf exists
+    if [[ -f "${REPO_DIR}/secrets.conf" && "$DRY_RUN" == false ]]; then
+        log_info "Secrets configuration found"
+        bash "${REPO_DIR}/scripts/secrets/secrets-manager.sh" pull || {
+            log_warn "Secret pull had failures (continuing setup)"
+        }
+    fi
 
     if [[ "$DRY_RUN" == true ]]; then
         log_warn "DRY RUN MODE - No changes will be made"
