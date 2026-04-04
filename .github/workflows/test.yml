@@ -344,12 +344,11 @@ jobs:
             -w /workspace \
             nixos/nix:latest \
             bash -c "
-              # nixos/nix image doesn't have /etc/os-release with ID=nixos by default
-              # Create it so platform detection works
+              # nixos/nix image is minimal — install required tools and create os-release
+              nix-env -iA nixpkgs.gnused nixpkgs.gnugrep nixpkgs.findutils nixpkgs.coreutils
               mkdir -p /etc
               echo 'ID=nixos' > /etc/os-release
               echo 'NAME=NixOS' >> /etc/os-release
-              nix-channel --update
               bash tests/platform-test.sh nixos nix
             "
 
