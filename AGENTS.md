@@ -5,38 +5,50 @@ This document provides comprehensive guidance for AI agents working with this ma
 ## Repository Overview
 
 This is a **cross-platform machine configuration and syncing system** that:
-- Manages packages across 14 different operating systems
-- Uses a profile-based system (minimal, full, custom)
+- Manages packages across 18 different operating systems
+- Uses a profile-based system (minimal, full, selfhosted, custom)
 - Syncs dotfiles via Syncthing
 - Encrypts secrets with git-crypt
 - Backs up data with Restic
+- Provides health checks, dry-run diffs, and profile validation
+- Includes a Nix flake for reproducible dev shells
 
 ## Architecture
 
 ### Core Components
 
 1. **Package Management** (`packages/`)
-   - `common.conf`: Universal package definitions with metadata
+   - `common.conf`: Universal package definitions in INI format
    - `platforms/*.conf`: Platform-specific packages and configurations
    - Package mapping system handles different package names across platforms
 
 2. **Profile System** (`profiles/`)
    - INI-based configurations with inheritance
    - Controls: packages, dotfiles, services, setup scripts
-   - Extensible - users can create custom profiles
+   - Extensible -- users can create custom profiles via `--create-profile`
 
 3. **Setup Scripts** (`scripts/`)
    - `setup.sh`: Main entry point
-   - `platform-detect.sh`: OS detection logic
-   - `profile-loader.sh`: Profile loading and inheritance
-   - `install-packages.sh`: Cross-platform package installer
-   - `link-dotfiles.sh`: Symlink manager
-   - Platform-specific utilities in `utils/`
+   - `scripts/lib/common.sh`: Shared logging library used by all scripts
+   - `scripts/platform-detect.sh`: OS detection logic
+   - `scripts/profile-loader.sh`: Profile loading and INI merging
+   - `scripts/ini-parser.sh`: Pure-bash INI parser (supports inline comments)
+   - `scripts/install-packages.sh`: Cross-platform package installer
+   - `scripts/link-dotfiles.sh`: Symlink manager
+   - Platform-specific utilities in `scripts/utils/`
 
 4. **Dotfiles** (`dotfiles/`)
    - Organized by profile: `profiles/minimal/`, `profiles/full/`
    - Syncthing synced directory
    - git-crypt encrypted secrets
+
+5. **Testing** (`tests/`)
+   - Uses bats-core with git submodules in `tests/libs/`
+   - Tests in `tests/bats/*.bats`
+   - Runner script: `tests/run-tests.sh`
+
+6. **Nix Flake** (`flake.nix`)
+   - Provides `nix develop` for minimal and full dev shell profiles
 
 ## Important Patterns
 
@@ -45,21 +57,29 @@ This is a **cross-platform machine configuration and syncing system** that:
 The system detects platforms in this order:
 1. macOS (Darwin)
 2. FreeBSD
-3. WSL (Windows Subsystem for Linux)
-4. Linux distributions (via `/etc/os-release`)
+3. WSL2 (Linux kernel string contains "microsoft")
+4. Native Windows (Git Bash / MSYS2 / Cygwin)
+5. Termux (Android, via `$ANDROID_ROOT` or `$PREFIX`)
+6. ChromeOS (Crostini, via `/dev/.cros_milestone`)
+7. Linux distributions (via `/etc/os-release`)
 
 ```bash
 source scripts/platform-detect.sh
 detect_platform
-echo $PLATFORM  # e.g., "fedora", "ubuntu", "macos"
-echo $PACKAGE_MANAGER  # e.g., "dnf", "apt", "homebrew"
+echo $PLATFORM  # e.g., "fedora", "ubuntu", "macos", "wsl", "termux"
+echo $PACKAGE_MANAGER  # e.g., "dnf", "apt", "homebrew", "termux-pkg"
 ```
+
+### Shared Logging
+
+All scripts source `scripts/lib/common.sh` which provides `log_info`, `log_warn`, `log_error`, and `log_success` functions with color output. A double-source guard prevents re-initialization.
 
 ### Profile Inheritance
 
 Profiles can extend other profiles using INI format:
 ```ini
 [profile]
+name = full
 extends = minimal
 
 [packages]
@@ -70,28 +90,42 @@ The `profile-loader.sh` merges INI configurations using pure bash.
 
 ### Package Mapping
 
-Some packages have different names on different platforms:
+Some packages have different names on different platforms. Mappings are defined in INI sections within `packages/common.conf`:
 
-```yaml
-# packages/common.conf
-package_mapping:
-  fd-find:
-    ubuntu: fd-find
-    void: fd
-    gentoo: sys-apps/fd
+```ini
+[package_mapping.fd-find]
+ubuntu = fd-find
+void = fd
+gentoo = sys-apps/fd
+macos = fd
+nixos = fd
+termux = fd
 ```
 
 The `install-packages.sh` script uses `get_mapped_package_name()` to resolve names.
+
+### Homebrew Integration
+
+On macOS, the installer generates a temporary Brewfile and uses `brew bundle` to install packages. This handles formulas, casks, and taps natively.
+
+### INI Parser
+
+The custom INI parser (`scripts/ini-parser.sh`) is pure bash with no external dependencies. It supports:
+- Section headers: `[section]`
+- Key-value pairs: `key = value`
+- Full-line comments: lines starting with `#` or `;`
+- Inline comments: content after ` #` or ` ;` is stripped
+- Last-match-wins semantics for merged files
 
 ### Symlink Strategy
 
 Dotfiles are symlinked, not copied:
 ```bash
 ~/dotfiles/profiles/full/.config/nvim/init.lua
-  → ~/.config/nvim/init.lua
+  -> ~/.config/nvim/init.lua
 ```
 
-Existing files are backed up with timestamps before linking.
+Existing files are backed up with timestamps before linking. Symlinks can be removed with `--unlink`.
 
 ## File Locations
 
@@ -99,25 +133,48 @@ Existing files are backed up with timestamps before linking.
 
 | File | Purpose |
 |------|---------|
-| `packages/common.conf` | Universal package definitions |
-| `packages/platforms/*.conf` | Platform-specific packages |
-| `profiles/*.conf` | Profile definitions |
+| `packages/common.conf` | Universal package definitions (INI format) |
+| `packages/platforms/*.conf` | Platform-specific packages (18 platform files) |
+| `profiles/*.conf` | Profile definitions (minimal, full, selfhosted) |
 | `backup/restic-config.conf` | Backup configuration (git-crypt encrypted) |
 | `dotfiles/.gitattributes` | git-crypt encryption rules |
+| `flake.nix` | Nix flake for dev shells |
 
 ### Scripts
 
 | Script | Purpose |
 |--------|---------|
 | `setup.sh` | Main entry point, orchestrates setup |
-| `scripts/platform-detect.sh` | OS detection |
-| `scripts/profile-loader.sh` | Profile loading and INI merging |
+| `scripts/lib/common.sh` | Shared logging library (`log_info`, `log_warn`, `log_error`, `log_success`) |
+| `scripts/platform-detect.sh` | OS and package manager detection |
+| `scripts/profile-loader.sh` | Profile loading, inheritance, and INI merging |
+| `scripts/ini-parser.sh` | Pure-bash INI parser with inline comment support |
 | `scripts/install-packages.sh` | Install packages using detected package manager |
 | `scripts/link-dotfiles.sh` | Create symlinks from dotfiles |
+| `scripts/unlink-dotfiles.sh` | Remove dotfile symlinks |
+| `scripts/check-health.sh` | Verify health of current setup |
+| `scripts/dry-run-diff.sh` | Show colored diff of what would change |
+| `scripts/validate-profile.sh` | Validate a profile's INI configuration |
+| `scripts/setup-docker-repo.sh` | Add Docker repo with GPG fingerprint verification |
 | `scripts/setup-syncthing.sh` | Configure Syncthing |
 | `scripts/setup-backup.sh` | Configure Restic backups |
 | `scripts/setup-ssh-agent.sh` | Configure SSH agent |
 | `scripts/setup-docker.sh` | Add user to docker group |
+| `scripts/setup-selfhosted.sh` | Self-hosted server setup (Docker Compose stack) |
+| `scripts/backup-selfhosted.sh` | Backup for self-hosted services |
+
+### CLI Commands
+
+The main `setup.sh` supports the following flags:
+
+| Flag | Purpose |
+|------|---------|
+| `--dry-run` | Show what would be done without executing |
+| `--check` | Check health of current setup |
+| `--validate-profile <name>` | Validate a profile's configuration |
+| `--create-profile <name>` | Create a new profile from template |
+| `--unlink` | Remove dotfile symlinks (use with `--profile`) |
+| `--profile <name>` | Select a profile (minimal, full, selfhosted, or custom) |
 
 ## Supported Platforms
 
@@ -134,9 +191,13 @@ Existing files are backed up with timestamps before linking.
 | Rocky | dnf | `/etc/os-release` ID=rocky |
 | Alma | dnf | `/etc/os-release` ID=almalinux |
 | RaspberryPiOS | apt | `/etc/os-release` ID=raspbian |
+| NixOS | nix | `/etc/os-release` ID=nixos |
 | macOS | homebrew | `uname` = Darwin |
 | FreeBSD | pkg | `uname` = FreeBSD |
-| Windows 11 | winget | `uname -r` contains "Microsoft" |
+| Windows 11 | winget | `uname -s` matches MINGW*/MSYS*/CYGWIN* |
+| WSL2 | apt | `uname -r` contains "microsoft" |
+| Termux | termux-pkg | `$ANDROID_ROOT` or `$PREFIX` contains com.termux |
+| ChromeOS | apt | `/dev/.cros_milestone` or `$CHROMEOS_RELEASE_NAME` |
 
 ## Profile System Details
 
@@ -152,41 +213,91 @@ Existing files are backed up with timestamps before linking.
 - **Services**: sshd, docker
 - **Default on**: All other platforms
 
-### Profile Structure
+### Selfhosted Profile
+- **Target**: Self-hosted servers running Docker Compose stacks
+- **Setup**: Docker Compose with monitoring, reverse proxy, etc.
 
-```yaml
-name: profile-name
-description: Human-readable description
-extends: base-profile  # or null
+### Profile Structure (INI format)
 
-packages:
-  category:
-    - package1
-    - package2
+```ini
+[profile]
+name = profile-name
+description = Human-readable description
+extends = minimal
 
-dotfiles:
-  source: profiles/profile-name/
-  links:
-    - src: relative/path/in/dotfiles
-      dest: ~/target/path
+[packages]
+category = package1 package2 package3
 
-services:
-  - service-name
+[dotfiles]
+source = profiles/profile-name/
 
-setup_scripts:
-  - scripts/setup-something.sh
+[dotfiles.links.1]
+src = shell/.config/nushell/
+dest = ~/.config/nushell/
+
+[services]
+enabled = sshd docker
+
+[setup_scripts]
+run = scripts/setup-something.sh
 ```
+
+## Testing
+
+### Test Framework
+
+Tests use bats-core with helper libraries as git submodules:
+- `tests/libs/bats-core` -- test runner
+- `tests/libs/bats-assert` -- assertion helpers
+- `tests/libs/bats-support` -- output formatting
+
+Run all tests:
+```bash
+./tests/run-tests.sh
+```
+
+Individual test files are in `tests/bats/` and cover: INI parsing, profile loading, dotfiles linking/unlinking, platform detection, WSL detection, health checks, dry-run diffs, package collections, Brewfile generation, Nix flake, idempotency, and more.
+
+### Dry Run Mode
+
+All major scripts support `--dry-run`. The `dry-run-diff.sh` script provides a colored diff showing exactly what would change:
+```bash
+./setup.sh --dry-run
+./scripts/install-packages.sh --dry-run
+./scripts/link-dotfiles.sh --dry-run
+```
+
+### Health Check
+
+Verify the state of an existing setup:
+```bash
+./setup.sh --check --profile full
+```
+
+### Profile Validation
+
+Validate a profile's INI structure:
+```bash
+./setup.sh --validate-profile my-profile
+```
+
+### Testing on New Machine
+
+1. Clone repository (with submodules: `git clone --recurse-submodules`)
+2. Run `./setup.sh --dry-run` to see what would happen
+3. Run `./setup.sh --profile minimal` for minimal test
+4. Verify with `./setup.sh --check --profile minimal`
 
 ## Secrets Management
 
 ### git-crypt
 
 Files matching patterns in `dotfiles/.gitattributes` are automatically encrypted:
-- `secrets/**` - All secrets
-- `**/.ssh/id_*` - SSH private keys
-- `**/*.gpg` - GPG keys
-- `**/api-tokens/**` - API tokens
-- `backup/restic-config.conf` - Backup credentials
+- `secrets/**` -- All secrets
+- `**/.ssh/id_*` -- SSH private keys
+- `**/*.gpg` -- GPG keys
+- `**/api-tokens/**` -- API tokens
+- `backup/restic-config.conf` -- Backup credentials
 
 **Important**: When working with secrets:
 1. Never commit unencrypted secrets
@@ -198,16 +309,17 @@ Files matching patterns in `dotfiles/.gitattributes` are automatically encrypted
 ### Adding a New Package
 
 1. Add to `packages/common.conf` under appropriate category
-2. If package has different names, add to `package_mapping` section
+2. If package has different names, add a `[package_mapping.name]` section
 3. Test with `./setup.sh --dry-run`
 
 ### Creating a New Profile
 
-1. Create `profiles/my-profile.conf`
-2. Set `extends: minimal` or `extends: full`
+1. Run `./setup.sh --create-profile my-profile` to scaffold from template
+2. Edit `profiles/my-profile.conf` (set `extends = minimal` or `extends = full`)
 3. Add packages, dotfiles, services
 4. Create dotfiles in `dotfiles/profiles/my-profile/`
-5. Test with `./setup.sh --profile my-profile --dry-run`
+5. Validate with `./setup.sh --validate-profile my-profile`
+6. Test with `./setup.sh --profile my-profile --dry-run`
 
 ### Supporting a New Platform
 
@@ -222,43 +334,23 @@ Files matching patterns in `dotfiles/.gitattributes` are automatically encrypted
 2. Profile-specific configs are in subdirectories
 3. Changes sync via Syncthing automatically
 4. To test: `./scripts/link-dotfiles.sh --profile <profile> --force`
+5. To remove: `./scripts/unlink-dotfiles.sh --profile <profile>`
 
-## Testing
+## Docker GPG Verification
 
-### Dry Run Mode
-
-All major scripts support `--dry-run`:
-```bash
-./setup.sh --dry-run
-./scripts/install-packages.sh --dry-run
-./scripts/link-dotfiles.sh --dry-run
-```
-
-### Testing on New Machine
-
-1. Clone repository
-2. Run `./setup.sh --dry-run` to see what would happen
-3. Run `./setup.sh --profile minimal` for minimal test
-4. Verify with `./setup.sh --profile full --no-backup`
-
-### Validation Checklist
-
-When making changes, verify:
-- [ ] Platform detection works correctly
-- [ ] Profile loading succeeds
-- [ ] Package mapping resolves correctly
-- [ ] Dotfiles symlink properly
-- [ ] No unencrypted secrets are committed
-- [ ] Backup script runs without errors
-- [ ] Syncthing config is valid
+The `scripts/setup-docker-repo.sh` script adds the Docker repository with GPG fingerprint verification. It:
+- Downloads Docker's official GPG key
+- Verifies the key fingerprint matches the known value
+- Warns and re-downloads if the fingerprint does not match
+- Configures the appropriate apt repository
 
 ## Known Limitations
 
-1. **Windows**: WSL setup is manual, not automated
-2. **Gentoo**: Requires manual USE flag configuration for some packages
-3. **FreeBSD**: Ports compilation requires manual intervention
-4. **Syncthing**: Device pairing must be done manually via web UI
-5. **git-crypt**: Requires GPG key to be available before unlocking
+1. **Gentoo**: Requires manual USE flag configuration for some packages
+2. **FreeBSD**: Ports compilation requires manual intervention
+3. **Syncthing**: Device pairing must be done manually via web UI
+4. **git-crypt**: Requires GPG key to be available before unlocking
+5. **ChromeOS**: Requires Crostini (Linux container) to be enabled first
 
 ## Dependencies
 
@@ -267,10 +359,11 @@ When making changes, verify:
 - `git`
 
 ### Optional (installed by setup)
-- `git-crypt` - for secrets encryption
-- `syncthing` - for dotfiles sync
-- `restic` - for backups
-- `mise` - for runtime version management
+- `git-crypt` -- for secrets encryption
+- `syncthing` -- for dotfiles sync
+- `restic` -- for backups
+- `mise` -- for runtime version management
+- `nix` -- for Nix flake dev shells (NixOS or standalone)
 
 ## Troubleshooting Guide
 
@@ -278,10 +371,13 @@ When making changes, verify:
 
 **Symptoms**: Script fails with "Unable to detect platform"
 
-**Solution**: 
+**Solution**:
 1. Check if `/etc/os-release` exists
 2. Verify the `ID` field matches expected values
-3. Add custom detection logic to `platform-detect.sh`
+3. For WSL2, confirm `uname -r` contains "microsoft"
+4. For Termux, confirm `$ANDROID_ROOT` or `$PREFIX` is set
+5. For ChromeOS, confirm `/dev/.cros_milestone` exists
+6. Add custom detection logic to `platform-detect.sh`
 
 ### Issue: Package installation fails
 
@@ -298,10 +394,11 @@ When making changes, verify:
 **Symptoms**: Symlinks not created, or point to wrong location
 
 **Solution**:
-1. Check profile `dotfiles.source` path is correct
+1. Check profile `[dotfiles] source` path is correct
 2. Verify source files exist in `dotfiles/profiles/<profile>/`
 3. Use `--force` flag to overwrite existing files
 4. Check for symlink loops or permission issues
+5. Use `--unlink` then re-link if symlinks are stale
 
 ### Issue: git-crypt unlock fails
 
@@ -328,15 +425,16 @@ When making changes, verify:
 ### Bash Scripts
 - Use `#!/usr/bin/env bash` shebang
 - Enable strict mode: `set -euo pipefail`
+- Source `scripts/lib/common.sh` for logging (do not define local log functions)
 - Use `[[ ]]` for tests, not `[ ]`
 - Quote variables: `"$var"`
 - Use functions for reusable code
-- Add logging functions: `log_info`, `log_error`, etc.
 
 ### INI Files
-- Use 2 spaces for indentation
-- Include descriptions for packages
-- Group related items with comments
+- Use spaces around `=` in key-value pairs: `key = value`
+- Include descriptions for packages via comments
+- Group related items with section headers
+- Multiple values on one key use space separation: `packages = pkg1 pkg2 pkg3`
 - Validate format before committing
 
 ### Documentation
@@ -360,11 +458,12 @@ test: add dry-run mode to setup script
 
 ### Branches
 
-- `main` - stable, production-ready
-- `develop` - integration branch
-- `feature/*` - new features
-- `fix/*` - bug fixes
-- `docs/*` - documentation updates
+- `main` -- stable, production-ready
+- `develop` -- integration branch
+- `feature/*` -- new features
+- `fix/*` -- bug fixes
+- `docs/*` -- documentation updates
+- `improvements/*` -- improvement rounds
 
 ## Security Considerations
 
@@ -374,6 +473,7 @@ test: add dry-run mode to setup script
 4. **Test backup restore procedure quarterly**
 5. **Keep git-crypt keys backed up securely**
 6. **Use strong passwords for backup encryption**
+7. **Docker GPG keys are fingerprint-verified** by `setup-docker-repo.sh`
 
 ## Performance Notes
 
@@ -385,13 +485,13 @@ test: add dry-run mode to setup script
 ## Future Enhancements
 
 Potential areas for improvement:
-- Add more example profiles (e.g., gaming, data science)
-- Implement idempotent package installation
-- Add rollback capability for failed setups
 - Create web UI for profile management
-- Add automated testing with VMs/containers
-- Support for additional package managers (nix, guix)
 - Integration with password managers (1Password, Bitwarden)
+- Plugin system (`custom/` directory for user extensions)
+- Version pinning (`package=version` syntax in INI configs)
+- Shell completions for setup.sh flags
+- Interactive mode for guided setup
+- Status dashboard for multi-machine overview
 
 ## Getting Help
 
@@ -399,19 +499,22 @@ Potential areas for improvement:
 2. Review PLAN.md for architecture details
 3. Examine example files (`*.example`)
 4. Run with `--dry-run` to diagnose issues
-5. Check logs in `~/backup.log` for backup issues
+5. Run with `--check` to verify current setup health
+6. Check logs in `~/backup.log` for backup issues
 
 ## Agent-Specific Notes
 
 When modifying this repository:
 1. Always test changes with `--dry-run` first
-2. Ensure YAML files are valid before committing
+2. Ensure INI files are valid before committing (use `--validate-profile`)
 3. Update both README.md and AGENTS.md for significant changes
 4. Verify git-crypt is not encrypting files it shouldn't
 5. Test profile inheritance chains thoroughly
 6. Keep platform-specific logic isolated in appropriate files
 7. Maintain backward compatibility with existing profiles
 8. Document any new dependencies or requirements
+9. Use `scripts/lib/common.sh` for logging -- never define local log functions
+10. Run `tests/run-tests.sh` to verify nothing is broken
 
 ## Docs
 
@@ -426,5 +529,5 @@ For questions about this repository:
 
 ---
 
-**Last Updated**: 2026-03-07
-**Version**: 1.0.0
+**Last Updated**: 2026-04-03
+**Version**: 2.0.0
