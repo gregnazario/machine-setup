@@ -78,8 +78,8 @@ secrets-init:
     bash setup.sh --secrets init
 
 # Configure secrets provider
-secrets-set-provider:
-    bash setup.sh --secrets set-provider
+secrets-set-provider provider:
+    bash setup.sh --secrets set-provider {{provider}}
 
 # === Health & Status ===
 

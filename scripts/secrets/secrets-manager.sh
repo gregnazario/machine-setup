@@ -298,7 +298,7 @@ push_secrets() {
         fi
 
         # Push to provider
-        if provider_set_secret "$SECRET_PROVIDER_KEY" "$local_value" 2>/dev/null; then
+        if provider_store_secret "$SECRET_PROVIDER_KEY" "$local_value" 2>/dev/null; then
             log_success "Secret '$name': pushed successfully"
             succeeded=$((succeeded + 1))
         else
@@ -465,6 +465,9 @@ main() {
                 return 1
             fi
             log_info "Using provider: ${provider}"
+            if ! provider_authenticated; then
+                provider_authenticate || { log_error "Authentication failed."; return 1; }
+            fi
             pull_secrets "$conf_path" "$dry_run"
             ;;
         push)
@@ -479,6 +482,9 @@ main() {
                 return 1
             fi
             log_info "Using provider: ${provider}"
+            if ! provider_authenticated; then
+                provider_authenticate || { log_error "Authentication failed."; return 1; }
+            fi
             push_secrets "$conf_path" "$dry_run"
             ;;
         list)
@@ -492,6 +498,16 @@ main() {
             if [[ ! -f "$conf_path" ]]; then
                 log_error "Config not found: ${conf_path}"
                 return 1
+            fi
+            local provider
+            provider="$(detect_provider "$conf_path")"
+            if [[ -z "$provider" ]]; then
+                log_error "No password manager provider available."
+                return 1
+            fi
+            log_info "Using provider: ${provider}"
+            if ! provider_authenticated; then
+                provider_authenticate || { log_error "Authentication failed."; return 1; }
             fi
             secrets_status "$conf_path"
             ;;
@@ -517,13 +533,26 @@ main() {
                 log_error "Usage: secrets-manager.sh set-provider <name>"
                 return 1
             fi
+            # Validate provider name against known providers
+            local valid_provider=false
+            for p in "${PROVIDER_ORDER[@]}"; do
+                if [[ "$p" == "$provider_name" ]]; then
+                    valid_provider=true
+                    break
+                fi
+            done
+            if [[ "$valid_provider" != "true" ]]; then
+                log_error "Unknown provider: ${provider_name}"
+                log_info "Supported providers: ${PROVIDER_ORDER[*]}"
+                return 1
+            fi
             # Update or add [provider] section with the name
             if grep -q '^\[provider\]' "$conf_path"; then
                 # Section exists — update or add the name key
                 local current
                 current="$(ini_get "$conf_path" "provider" "name" "")"
                 if [[ -n "$current" ]]; then
-                    sed -i.bak "s/^name = .*/name = ${provider_name}/" "$conf_path"
+                    sed -i.bak "/^\[provider\]/,/^\[/ s/^name = .*/name = ${provider_name}/" "$conf_path"
                     rm -f "${conf_path}.bak"
                 else
                     sed -i.bak "/^\[provider\]/a\\
