@@ -45,6 +45,10 @@ validate profile:
 create-profile name:
     bash setup.sh --create-profile {{name}}
 
+# Compare two profiles
+diff-profiles a b:
+    bash setup.sh --diff-profiles {{a}} {{b}}
+
 # === Dotfiles ===
 
 # Link dotfiles for a profile
