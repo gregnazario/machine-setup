@@ -22,10 +22,15 @@ error() {
 
 check_commands() {
     log_info "Checking key binaries..."
-    local cmds=(git nvim nu rg fd fzf)
-    for cmd in "${cmds[@]}"; do
+    # Each entry is "primary_cmd:alt_cmd" — check alt if primary not found
+    local cmds=("git" "nvim" "nu" "rg" "fd:fdfind" "fzf")
+    for entry in "${cmds[@]}"; do
+        local cmd="${entry%%:*}"
+        local alt="${entry#*:}"
         if command -v "$cmd" &>/dev/null; then
             log_success "  $cmd: $(command -v "$cmd")"
+        elif [[ "$alt" != "$cmd" ]] && command -v "$alt" &>/dev/null; then
+            log_success "  $alt: $(command -v "$alt")"
         else
             warn "  $cmd: not found on PATH"
         fi

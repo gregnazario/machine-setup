@@ -3,10 +3,18 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/common.sh"
+source "${SCRIPT_DIR}/platform-detect.sh"
 
 setup_docker() {
     log_info "Setting up Docker..."
-    
+
+    # Set up Docker APT repository with GPG verification on apt-based platforms
+    detect_platform
+    if [[ "$PACKAGE_MANAGER" == "apt" ]]; then
+        source "${SCRIPT_DIR}/setup-docker-repo.sh"
+        setup_docker_repo "$PLATFORM"
+    fi
+
     if ! command -v docker &> /dev/null; then
         log_error "Docker is not installed. Please install it first."
         exit 1
