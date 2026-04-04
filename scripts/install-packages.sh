@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2086
-# SC2086: $packages is intentionally unquoted — word-splitting feeds
-# multiple package names to the package manager as separate arguments.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
