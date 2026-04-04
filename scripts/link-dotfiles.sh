@@ -59,7 +59,13 @@ create_symlink() {
         echo "Would create symlink: $target -> $source"
         return
     fi
-    
+
+    # Skip if symlink already points to the correct source (idempotent)
+    if [[ -L "$target" && "$(readlink "$target")" == "$source" ]]; then
+        log_info "Already linked: $target -> $source"
+        return
+    fi
+
     backup_existing "$target"
     
     local target_dir
