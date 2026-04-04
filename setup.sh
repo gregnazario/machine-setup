@@ -62,6 +62,7 @@ Options:
     --verify-backup          Verify backup integrity and recency
     --detect-conflicts       Detect dotfile conflicts and broken symlinks
     --status                 Show status dashboard of current setup
+    --build-image <profile>  Build a Docker image with a profile pre-installed
     --serve [--port <n>]     Start web status dashboard (default port: 8080)
     -i, --interactive        Interactive setup wizard
     -h, --help               Show this help message
@@ -365,6 +366,13 @@ PROFILE_EOF
                 ensure_repo
                 shift
                 bash "${REPO_DIR}/scripts/detect-conflicts.sh" "$@"
+                exit $?
+                ;;
+            --build-image)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/build-image.sh" "$@"
                 exit $?
                 ;;
             --interactive|-i)
