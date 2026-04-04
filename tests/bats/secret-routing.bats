@@ -159,11 +159,12 @@ EOF
 
     route_to_file "private-key-data" "$dest" "0400"
 
-    local perms
-    perms="$(stat -f '%Lp' "$dest" 2>/dev/null || stat -c '%a' "$dest" 2>/dev/null)"
-    # Strip leading zeros for consistent comparison across platforms
-    perms="${perms#"${perms%%[!0]*}"}"
-    [ "$perms" = "400" ]
+    # Verify file is not group/world readable
+    # Use ls -l which is portable across macOS and Linux
+    local ls_perms
+    ls_perms="$(ls -l "$dest" | cut -c1-10)"
+    # Should be -r-------- for mode 0400
+    [[ "$ls_perms" == "-r--------" ]]
 }
 
 @test "route_to_file: allows files outside the repo" {
