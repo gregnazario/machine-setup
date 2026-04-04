@@ -268,8 +268,6 @@ main() {
         log_info "Installing packages..."
         if [[ "$DRY_RUN" == false ]]; then
             bash "${REPO_DIR}/scripts/install-packages.sh" --profile "$PROFILE"
-        else
-            echo "  Would install packages for profile: $PROFILE"
         fi
     fi
 
@@ -277,8 +275,6 @@ main() {
         log_info "Linking dotfiles..."
         if [[ "$DRY_RUN" == false ]]; then
             bash "${REPO_DIR}/scripts/link-dotfiles.sh" --profile "$PROFILE"
-        else
-            echo "  Would link dotfiles for profile: $PROFILE"
         fi
     fi
 
@@ -298,6 +294,10 @@ main() {
         else
             echo "  Would setup backup with Restic"
         fi
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        bash "${REPO_DIR}/scripts/dry-run-diff.sh" --profile "$PROFILE"
     fi
 
     log_success "Setup complete!"
