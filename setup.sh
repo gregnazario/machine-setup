@@ -48,6 +48,8 @@ Options:
     --dry-run                Show what would be done without executing
     --list-profiles          List available profiles
     --show-profile <name>    Show details of a specific profile
+    --validate-profile <name>  Validate a profile's configuration
+    --unlink                 Remove dotfile symlinks (use with --profile)
     -h, --help               Show this help message
 
 Environment Variables:
@@ -183,6 +185,19 @@ parse_args() {
                 ensure_repo
                 show_profile "$2"
                 exit 0
+                ;;
+            --validate-profile)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                bash "${REPO_DIR}/scripts/validate-profile.sh" --profile "$2"
+                exit $?
+                ;;
+            --unlink)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/unlink-dotfiles.sh" "$@"
+                exit $?
                 ;;
             *)
                 echo "Error: Unknown option: $1"
