@@ -77,3 +77,5 @@ custom/dotfiles/
 
 # Secrets configuration (contains real secret mappings)
 secrets.conf
+
+docs/superpowers
