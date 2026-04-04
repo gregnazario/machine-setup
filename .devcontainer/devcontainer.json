@@ -1,0 +1,26 @@
+{
+    "name": "Machine Setup Dev",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": false,
+            "installOhMyZsh": false,
+            "upgradePackages": false,
+            "username": "vscode"
+        }
+    },
+    "postCreateCommand": "bash setup.sh --profile minimal --no-syncthing --no-backup --dry-run",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "timonwong.shellcheck",
+                "foxundermoon.shell-format",
+                "mads-hartmann.bash-ide-vscode"
+            ]
+        }
+    },
+    "remoteUser": "vscode"
+}
