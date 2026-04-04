@@ -65,3 +65,6 @@ coverage/
 dist/
 build/
 *.egg-info/
+
+# Nix
+flake.lock
