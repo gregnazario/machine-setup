@@ -93,7 +93,7 @@ generate_changelog() {
 
     log_success "Changelog generated: $OUTPUT"
     local count
-    count=$(grep -c "^- " "$OUTPUT")
+    count=$(grep -c "^- " "$OUTPUT" || true)
     log_info "Total entries: $count"
 }
 

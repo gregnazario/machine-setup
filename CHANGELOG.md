@@ -79,6 +79,6 @@ Generated from conventional commits on 2026-04-04.
 
 ## Other
 
-- make mroe updates (`a5ee06a`)
+- make more updates (`a5ee06a`)
 - Initial setup (`471be18`)
 
