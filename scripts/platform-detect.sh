@@ -21,6 +21,10 @@ detect_platform() {
         # Native Windows (Git Bash / MSYS2 / Cygwin)
         PLATFORM="windows"
         PACKAGE_MANAGER="winget"
+    elif [[ -n "${ANDROID_ROOT:-}" ]] || [[ -n "${PREFIX:-}" && "${PREFIX:-}" == */com.termux/* ]]; then
+        # Android Termux
+        PLATFORM="termux"
+        PACKAGE_MANAGER="termux-pkg"
     elif [[ -f /etc/os-release ]]; then
         source /etc/os-release
         
@@ -57,6 +61,10 @@ detect_platform() {
                 PLATFORM="alpine"
                 PACKAGE_MANAGER="apk"
                 ;;
+            nixos)
+                PLATFORM="nixos"
+                PACKAGE_MANAGER="nix"
+                ;;
             opensuse*)
                 PLATFORM="opensuse"
                 PACKAGE_MANAGER="zypper"
@@ -71,7 +79,7 @@ detect_platform() {
                 ;;
             *)
                 log_error "Unsupported Linux distribution: $ID"
-                log_error "Supported: fedora, ubuntu, debian, gentoo, void, raspbian, arch, alpine, opensuse, rocky, alma, wsl"
+                log_error "Supported: fedora, ubuntu, debian, gentoo, void, nixos, raspbian, arch, alpine, opensuse, rocky, alma, wsl, termux"
                 exit 1
                 ;;
         esac
