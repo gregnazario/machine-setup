@@ -161,6 +161,8 @@ EOF
 
     local perms
     perms="$(stat -f '%Lp' "$dest" 2>/dev/null || stat -c '%a' "$dest" 2>/dev/null)"
+    # Strip leading zeros for consistent comparison across platforms
+    perms="${perms#"${perms%%[!0]*}"}"
     [ "$perms" = "400" ]
 }
 
