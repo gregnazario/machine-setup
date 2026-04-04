@@ -1,0 +1,5 @@
+# Project-wide shellcheck configuration
+#
+# SC2086: Word-splitting is intentional for package manager arguments
+# where $packages must expand to separate arguments.
+disable=SC2086
