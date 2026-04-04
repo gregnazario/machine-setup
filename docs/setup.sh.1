@@ -1,0 +1,165 @@
+.TH SETUP.SH 1 "2026-04-03" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+setup.sh \- cross-platform machine configuration and syncing
+.SH SYNOPSIS
+.B setup.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Cross-platform machine setup with profile-based package management,
+dotfiles synchronization via Syncthing, secrets management with git-crypt,
+and automated backups with Restic.
+.PP
+Supports 18 platforms: Fedora, Ubuntu, Debian, Gentoo, Void Linux,
+Arch Linux, Alpine Linux, NixOS, OpenSUSE, Rocky Linux, AlmaLinux,
+RaspberryPiOS, macOS, FreeBSD, Windows 11, WSL2, ChromeOS, and Termux.
+.SH OPTIONS
+.TP
+.BR \-p ", " \-\-profile " " \fIname\fR
+Profile to use (minimal, full, or custom profile name).
+Default: auto (minimal on RaspberryPiOS, full elsewhere).
+.TP
+.B \-\-no\-packages
+Skip package installation.
+.TP
+.B \-\-no\-dotfiles
+Skip dotfile linking.
+.TP
+.B \-\-no\-syncthing
+Skip Syncthing setup.
+.TP
+.B \-\-no\-backup
+Skip backup setup.
+.TP
+.B \-\-dry\-run
+Show a colored diff of current vs desired state without making changes.
+.TP
+.B \-\-list\-profiles
+List all available profiles with descriptions.
+.TP
+.BR \-\-show\-profile " " \fIname\fR
+Show the full configuration of a profile.
+.TP
+.BR \-\-validate\-profile " " \fIname\fR
+Validate a profile's configuration (required fields, dotfile paths,
+platform config).
+.TP
+.BR \-\-create\-profile " " \fIname\fR
+Create a new profile from a minimal template. Profile names may only
+contain alphanumeric characters, hyphens, and underscores.
+.TP
+.B \-\-update
+Pull the latest changes from the remote repository and re-run setup
+with the same arguments.
+.TP
+.B \-\-unlink
+Remove dotfile symlinks managed by the specified profile. Use with
+\fB\-\-profile\fR.
+.TP
+.BR \-\-check
+Check the health of the current setup: installed commands, dotfile
+symlink integrity, and service status. Use with \fB\-\-profile\fR.
+.TP
+.B \-\-status
+Show a status dashboard with platform info, installed package versions,
+dotfile link state, git-crypt status, Syncthing, backup config, and services.
+.TP
+.BR \-i ", " \-\-interactive
+Launch an interactive setup wizard that guides through profile selection
+and component choices.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH ENVIRONMENT
+.TP
+.B MACHINE_SETUP_REPO
+Git repository URL. Default: https://github.com/yourusername/machine-setup.git
+.TP
+.B MACHINE_SETUP_DIR
+Local install directory. Default: ~/.machine-setup
+.TP
+.B MACHINE_SETUP_CUSTOM
+Custom extensions directory. Default: <repo>/custom
+.SH PROFILES
+.SS minimal
+Essential CLI tools only. Includes: nushell, neovim, ripgrep, fd-find,
+fzf, git, mise, gnupg, openssh, git-crypt, syncthing. Ideal for servers
+and resource-constrained systems. Default on RaspberryPiOS.
+.SS full
+Complete development environment. Extends minimal with: zellij, bat, eza,
+dust, bottom, procs, jq, httpie, Docker, kubectl, Python 3, Rust, and more.
+Default on all other platforms.
+.SS selfhosted
+Self-hosted server stack. Extends minimal with Docker Compose, Tailscale,
+monitoring tools, and backup utilities.
+.SH CUSTOM EXTENSIONS
+Place customizations in the \fBcustom/\fR directory:
+.TP
+.B custom/profiles/*.conf
+Custom profiles (auto-discovered by \fB\-\-list\-profiles\fR).
+.TP
+.B custom/packages/*.conf
+Extra package definitions (merged during installation).
+.TP
+.B custom/scripts/*.sh
+Extra setup scripts (run after main setup, alphabetical order).
+.TP
+.B custom/dotfiles/
+Extra dotfiles (mirrored to $HOME).
+.SH NIXOS
+NixOS users can use the Nix flake instead of setup.sh for packages:
+.PP
+.RS
+nix develop        # minimal profile
+.br
+nix develop .#full # full profile
+.RE
+.SH FILES
+.TP
+.I packages/common.conf
+Universal package definitions with cross-platform name mappings.
+.TP
+.I packages/platforms/*.conf
+Platform-specific package definitions.
+.TP
+.I profiles/*.conf
+Profile definitions (INI format with inheritance).
+.TP
+.I backup/restic-config.conf
+Backup configuration (encrypted with git-crypt).
+.TP
+.I completions/
+Shell completion scripts for bash, zsh, and fish.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Error (missing dependencies, invalid profile, failed installation).
+.SH EXAMPLES
+.TP
+Auto-detect profile and run full setup:
+.B setup.sh
+.TP
+Use minimal profile, skip backup:
+.B setup.sh --profile minimal --no-backup
+.TP
+Preview changes without applying:
+.B setup.sh --dry-run
+.TP
+Check health of current setup:
+.B setup.sh --check --profile full
+.TP
+Create and use a custom profile:
+.B setup.sh --create-profile mysetup
+.br
+.B setup.sh --profile mysetup
+.SH SEE ALSO
+.BR git-crypt (1),
+.BR syncthing (1),
+.BR restic (1),
+.BR nix (1)
+.SH AUTHORS
+Machine Setup contributors.
+.SH BUGS
+Report bugs at: https://github.com/yourusername/machine-setup/issues
