@@ -157,6 +157,16 @@ check profile="auto":
 serve port="8080" profile="auto":
     PROFILE={{profile}} bash setup.sh --serve --port {{port}}
 
+# === Docker ===
+
+# Build a Docker image with a profile pre-installed
+build-image profile *ARGS:
+    bash scripts/build-image.sh {{profile}} {{ARGS}}
+
+# Preview the generated Dockerfile without building
+build-image-dry-run profile:
+    bash scripts/build-image.sh {{profile}} --dry-run
+
 # === Testing ===
 
 # Run all tests (bats + integration + e2e)
