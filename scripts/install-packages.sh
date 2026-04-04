@@ -89,15 +89,34 @@ install_packages_xbps() {
 
 install_packages_homebrew() {
     log_info "Installing packages with homebrew..."
-    
+
     local packages="$1"
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         echo "Would install: $packages"
         return
     fi
-    
-    brew install $packages
+
+    # Update Homebrew once before batch install
+    brew update --quiet
+
+    # Homebrew handles multiple packages in one command efficiently
+    local failed_packages=""
+    if ! brew install $packages 2>/dev/null; then
+        # If batch fails, fall back to one-by-one to identify failures
+        for package in $packages; do
+            if ! brew install "$package" 2>/dev/null; then
+                log_warn "Failed to install: $package (may be a cask)"
+                if ! brew install --cask "$package" 2>/dev/null; then
+                    failed_packages="$failed_packages $package"
+                fi
+            fi
+        done
+    fi
+
+    if [[ -n "$failed_packages" ]]; then
+        log_warn "Failed to install:$failed_packages"
+    fi
 }
 
 install_packages_pkg() {
