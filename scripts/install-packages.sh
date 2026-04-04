@@ -273,7 +273,11 @@ collect_packages() {
 
 install_packages() {
     local packages="$1"
-    
+
+    # Process version-pinned packages for this package manager
+    source "${SCRIPT_DIR}/version-pin.sh"
+    packages=$(process_versioned_packages "$packages" "$PACKAGE_MANAGER")
+
     case "$PACKAGE_MANAGER" in
         apt)
             install_packages_apt "$packages"
