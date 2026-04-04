@@ -132,6 +132,20 @@ install_packages_pkg() {
     sudo pkg install -y $packages
 }
 
+install_packages_termux() {
+    log_info "Installing packages with pkg (Termux)..."
+
+    local packages="$1"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "Would install: $packages"
+        return
+    fi
+
+    pkg update
+    pkg install -y $packages
+}
+
 install_packages_winget() {
     log_info "Installing packages with winget..."
     
@@ -175,15 +189,30 @@ install_packages_apk() {
 
 install_packages_zypper() {
     log_info "Installing packages with zypper (OpenSUSE)..."
-    
+
     local packages="$1"
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         echo "Would install: $packages"
         return
     fi
-    
+
     sudo zypper install -y $packages
+}
+
+install_packages_nix() {
+    log_info "Installing packages with nix..."
+
+    local packages="$1"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "Would install: $packages"
+        return
+    fi
+
+    for package in $packages; do
+        nix-env -iA "nixpkgs.$package" || nix-env -i "$package"
+    done
 }
 
 get_mapped_package_name() {
@@ -270,6 +299,12 @@ install_packages() {
             ;;
         zypper)
             install_packages_zypper "$packages"
+            ;;
+        nix)
+            install_packages_nix "$packages"
+            ;;
+        termux-pkg)
+            install_packages_termux "$packages"
             ;;
         *)
             log_error "Unsupported package manager: $PACKAGE_MANAGER"
