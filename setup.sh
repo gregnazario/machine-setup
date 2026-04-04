@@ -49,6 +49,7 @@ Options:
     --list-profiles          List available profiles
     --show-profile <name>    Show details of a specific profile
     --validate-profile <name>  Validate a profile's configuration
+    --create-profile <name>  Create a new profile from template
     --unlink                 Remove dotfile symlinks (use with --profile)
     --check                  Check health of current setup (use with --profile)
     -h, --help               Show this help message
@@ -206,6 +207,41 @@ parse_args() {
                 shift
                 bash "${REPO_DIR}/scripts/check-health.sh" "$@"
                 exit $?
+                ;;
+            --create-profile)
+                local new_profile="$2"
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                local profile_path="${REPO_DIR}/profiles/${new_profile}.conf"
+                if [[ -f "$profile_path" ]]; then
+                    echo "Error: Profile '$new_profile' already exists at $profile_path"
+                    exit 1
+                fi
+                cat > "$profile_path" <<PROFILE_EOF
+# Profile: ${new_profile}
+# Created: $(date +%Y-%m-%d)
+
+[profile]
+name = ${new_profile}
+description = Custom profile
+extends = minimal
+
+[packages]
+# Add packages here, e.g.:
+# tools = jq httpie
+
+[dotfiles]
+source = profiles/minimal/
+
+[services]
+# enable = sshd
+
+[setup_scripts]
+# run = scripts/setup-ssh-agent.sh
+PROFILE_EOF
+                echo "Created profile: $profile_path"
+                echo "Edit it to customize, then run: $0 --validate-profile $new_profile"
+                exit 0
                 ;;
             *)
                 echo "Error: Unknown option: $1"
