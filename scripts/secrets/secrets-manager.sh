@@ -380,6 +380,91 @@ secrets_status() {
 }
 
 ###############################################################################
+# generate_random_secret <length>
+#
+# Generate a random secret value using /dev/urandom.
+# Prints the value to stdout.
+###############################################################################
+generate_random_secret() {
+    local length="${1:-32}"
+    # Use /dev/urandom with base64 encoding, strip non-alphanumeric
+    head -c "$((length * 2))" /dev/urandom | base64 | tr -dc 'A-Za-z0-9!@#$%^&*' | head -c "$length"
+}
+
+###############################################################################
+# rotate_secrets <conf_path> [dry_run] [target]
+#
+# Generate new values for selected secrets, push to provider, update local.
+# Only rotates password-type secrets (skips SSH keys, GPG keys, etc.).
+###############################################################################
+rotate_secrets() {
+    local conf="$1"
+    local dry_run="${2:-false}"
+    local target="${3:-}"  # specific secret name, or empty for all
+
+    load_secret_mappings "$conf"
+
+    if [[ ${#SECRET_NAMES[@]} -eq 0 ]]; then
+        log_warn "No secret mappings found"
+        return 0
+    fi
+
+    local rotated=0 skipped=0 failed=0
+
+    for name in "${SECRET_NAMES[@]}"; do
+        # If a target was specified, only rotate that one
+        if [[ -n "$target" && "$name" != "$target" ]]; then
+            continue
+        fi
+
+        get_secret_config "$conf" "$name"
+
+        # Only rotate password-type secrets (not SSH keys, GPG keys, etc.)
+        # Skip file destinations with binary content (keys)
+        if [[ "$SECRET_DEST" == "file" && ("$SECRET_DEST_FILE" == *"id_"* || "$SECRET_DEST_FILE" == *".gpg"* || "$SECRET_DEST_FILE" == *".asc"*) ]]; then
+            log_info "Skipping $name (key file — use dedicated key rotation tools)"
+            skipped=$((skipped + 1))
+            continue
+        fi
+
+        if [[ "$dry_run" == "true" ]]; then
+            log_info "Would rotate: $name"
+            skipped=$((skipped + 1))
+            continue
+        fi
+
+        # Generate a new random value
+        local new_value
+        new_value=$(generate_random_secret 32)
+
+        log_info "Rotating: $name"
+
+        # Push new value to provider
+        if ! provider_store_secret "$SECRET_PROVIDER_KEY" "$new_value" 2>/dev/null; then
+            log_error "Failed to push rotated secret: $name"
+            failed=$((failed + 1))
+            continue
+        fi
+
+        # Update local destination
+        local dest_file
+        dest_file="$(_resolve_dest_file "$SECRET_DEST_FILE")"
+
+        if route_secret "$new_value" "$SECRET_DEST" "$dest_file" "$SECRET_DEST_SECTION" "$SECRET_DEST_KEY" "$SECRET_DEST_VAR" "$SECRET_DEST_MODE"; then
+            log_success "Rotated: $name"
+            rotated=$((rotated + 1))
+        else
+            log_error "Failed to update local destination: $name"
+            failed=$((failed + 1))
+        fi
+    done
+
+    echo ""
+    log_info "Rotation summary: $rotated rotated, $failed failed, $skipped skipped"
+    [[ $failed -eq 0 ]]
+}
+
+###############################################################################
 # _usage
 #
 # Print usage information.
@@ -393,6 +478,7 @@ Actions:
   push           Push local secret values back to password manager
   list           List all configured secret mappings
   status         Show which secrets exist in provider and locally
+  rotate [name]  Rotate secrets (all, or a specific one by name)
   init           Create a secrets.conf from the example template
   set-provider   Set the provider in secrets.conf
 
@@ -406,7 +492,7 @@ USAGE
 ###############################################################################
 # main <action> [...]
 #
-# CLI handler for pull/push/list/status/init/set-provider actions.
+# CLI handler for pull/push/list/status/rotate/init/set-provider actions.
 ###############################################################################
 main() {
     local action=""
@@ -416,7 +502,7 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            pull|push|list|status|init|set-provider)
+            pull|push|list|status|rotate|init|set-provider)
                 action="$1"
                 shift
                 ;;
@@ -434,8 +520,12 @@ main() {
                 ;;
             *)
                 # For set-provider, the next arg is the provider name
+                # For rotate, the next arg is the optional target secret name
                 if [[ "$action" == "set-provider" ]]; then
                     local provider_name="$1"
+                    shift
+                elif [[ "$action" == "rotate" ]]; then
+                    local rotate_target="$1"
                     shift
                 else
                     log_error "Unknown argument: $1"
@@ -510,6 +600,23 @@ main() {
                 provider_authenticate || { log_error "Authentication failed."; return 1; }
             fi
             secrets_status "$conf_path"
+            ;;
+        rotate)
+            if [[ ! -f "$conf_path" ]]; then
+                log_error "Config not found: ${conf_path}"
+                return 1
+            fi
+            local provider
+            provider="$(detect_provider "$conf_path")"
+            if [[ -z "$provider" ]]; then
+                log_error "No password manager provider available."
+                return 1
+            fi
+            log_info "Using provider: ${provider}"
+            if ! provider_authenticated; then
+                provider_authenticate || { log_error "Authentication failed."; return 1; }
+            fi
+            rotate_secrets "$conf_path" "$dry_run" "${rotate_target:-}"
             ;;
         init)
             local example="${_SM_REPO_DIR}/secrets.conf.example"
