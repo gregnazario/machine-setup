@@ -154,13 +154,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Cache apt packages
-        uses: actions/cache@v5
-        with:
-          path: /var/cache/apt/archives
-          key: apt-ubuntu-${{ hashFiles('packages/platforms/ubuntu.conf', 'packages/common.conf') }}
-          restore-keys: |
-            apt-ubuntu-
       - name: Run platform test
         run: bash tests/platform-test.sh ubuntu apt
       - name: Run integration test
@@ -402,13 +395,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Cache apt packages
-        uses: actions/cache@v5
-        with:
-          path: /var/cache/apt/archives
-          key: apt-e2e-${{ hashFiles('packages/platforms/ubuntu.conf', 'packages/common.conf') }}
-          restore-keys: |
-            apt-e2e-
       - name: Install dependencies
         run: |
           sudo apt-get update

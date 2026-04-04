@@ -189,6 +189,10 @@ parse_args() {
                 exit 0
                 ;;
             --validate-profile)
+                if [[ $# -lt 2 ]]; then
+                    echo "Error: --validate-profile requires a profile name"
+                    exit 1
+                fi
                 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
                 ensure_repo
                 bash "${REPO_DIR}/scripts/validate-profile.sh" --profile "$2"
@@ -209,7 +213,16 @@ parse_args() {
                 exit $?
                 ;;
             --create-profile)
+                if [[ $# -lt 2 ]]; then
+                    echo "Error: --create-profile requires a profile name"
+                    exit 1
+                fi
                 local new_profile="$2"
+                # Validate profile name to prevent path traversal
+                if [[ "$new_profile" =~ [/\\] || "$new_profile" == *..* || ! "$new_profile" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                    echo "Error: Invalid profile name '$new_profile' (only alphanumeric, hyphens, underscores allowed)"
+                    exit 1
+                fi
                 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
                 ensure_repo
                 local profile_path="${REPO_DIR}/profiles/${new_profile}.conf"

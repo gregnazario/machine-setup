@@ -39,7 +39,7 @@ package_to_command() {
         neovim) echo "nvim" ;;
         nushell) echo "nu" ;;
         ripgrep) echo "rg" ;;
-        fd-find) echo "fd" ;;
+        fd-find|fd) if command -v fd &>/dev/null; then echo "fd"; elif command -v fdfind &>/dev/null; then echo "fdfind"; else echo "fd"; fi; return ;;
         python3) echo "python3" ;;
         gh) echo "gh" ;;
         *) echo "$pkg" ;;
