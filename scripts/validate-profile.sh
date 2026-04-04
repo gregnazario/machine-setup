@@ -10,11 +10,26 @@ source "${SCRIPT_DIR}/ini-parser.sh"
 
 PROFILE_NAME=""
 
+# Validate profile name to prevent path traversal
+validate_name() {
+    local name="$1"
+    if [[ "$name" =~ [/\\] || "$name" == *..* || ! "$name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        log_error "Invalid profile name: '$name' (only alphanumeric, hyphens, underscores allowed)"
+        exit 1
+    fi
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             --profile)
+                if [[ $# -lt 2 ]]; then
+                    log_error "Missing value for --profile"
+                    echo "Usage: $0 --profile <name>"
+                    exit 1
+                fi
                 PROFILE_NAME="$2"
+                validate_name "$PROFILE_NAME"
                 shift 2
                 ;;
             *)
@@ -122,7 +137,7 @@ validate_profile() {
     local dotfiles_source
     dotfiles_source=$(ini_get "$profile_file" "dotfiles" "source" "")
     if [[ -n "$dotfiles_source" ]]; then
-        local dotfiles_dir="${SCRIPT_DIR}/../${dotfiles_source}"
+        local dotfiles_dir="${SCRIPT_DIR}/../dotfiles/${dotfiles_source}"
         if [[ -d "$dotfiles_dir" ]]; then
             log_success "Dotfiles source directory exists: ${dotfiles_source}"
         else
@@ -146,23 +161,23 @@ validate_profile() {
             break
         fi
 
-        local full_src="${SCRIPT_DIR}/../${dotfiles_source}${src}"
+        local full_src="${SCRIPT_DIR}/../dotfiles/${dotfiles_source}${src}"
         if [[ -e "$full_src" ]]; then
-            log_success "Dotfile link source exists: ${dotfiles_source}${src}"
+            log_success "Dotfile link source exists: dotfiles/${dotfiles_source}${src}"
         else
-            log_warn "Dotfile link source not found: ${dotfiles_source}${src}"
+            log_warn "Dotfile link source not found: dotfiles/${dotfiles_source}${src}"
             warnings=$((warnings + 1))
         fi
 
         link_index=$((link_index + 1))
     done
 
-    # Check platform config file exists (platform-specific package file)
-    local platform_dir="${SCRIPT_DIR}/../platforms"
+    # Check platform config directory exists (platform-specific package files)
+    local platform_dir="${SCRIPT_DIR}/../packages/platforms"
     if [[ -d "$platform_dir" ]]; then
-        log_success "Platforms directory exists"
+        log_success "Platform config directory exists: packages/platforms"
     else
-        log_warn "Platforms directory not found"
+        log_warn "Platform config directory not found: packages/platforms"
         warnings=$((warnings + 1))
     fi
 
