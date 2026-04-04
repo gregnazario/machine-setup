@@ -19,10 +19,16 @@ export HOME="$TEST_HOME"
 
 cd "$REPO_ROOT"
 
-# Test platform detection
-echo "Testing platform detection..."
+# Skip if not running on Ubuntu/Debian
 source scripts/platform-detect.sh
 detect_platform
+if [[ "$PLATFORM" != "ubuntu" && "$PLATFORM" != "debian" ]]; then
+    echo "⏭️  SKIP: Not running on Ubuntu/Debian (detected: $PLATFORM)"
+    exit 0
+fi
+
+# Test platform detection
+echo "Testing platform detection..."
 
 if [[ "$PLATFORM" != "ubuntu" ]]; then
     echo "❌ FAIL: Platform should be 'ubuntu', got '$PLATFORM'"
