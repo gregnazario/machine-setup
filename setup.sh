@@ -50,6 +50,7 @@ Options:
     --show-profile <name>    Show details of a specific profile
     --validate-profile <name>  Validate a profile's configuration
     --unlink                 Remove dotfile symlinks (use with --profile)
+    --check                  Check health of current setup (use with --profile)
     -h, --help               Show this help message
 
 Environment Variables:
@@ -197,6 +198,13 @@ parse_args() {
                 ensure_repo
                 shift
                 bash "${REPO_DIR}/scripts/unlink-dotfiles.sh" "$@"
+                exit $?
+                ;;
+            --check)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/check-health.sh" "$@"
                 exit $?
                 ;;
             *)
