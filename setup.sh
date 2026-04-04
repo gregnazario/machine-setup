@@ -53,6 +53,8 @@ Options:
     --create-profile <name>  Create a new profile from template
     --unlink                 Remove dotfile symlinks (use with --profile)
     --check                  Check health of current setup (use with --profile)
+    --status                 Show status dashboard of current setup
+    -i, --interactive        Interactive setup wizard
     -h, --help               Show this help message
 
 Environment Variables:
@@ -84,6 +86,7 @@ Supported Platforms:
     - FreeBSD (pkg)
     - Windows 11 (winget)
     - WSL2 (apt)
+    - ChromeOS (apt)
     - Termux (pkg)
 EOF
 }
@@ -273,6 +276,19 @@ PROFILE_EOF
                 echo "Created profile: $profile_path"
                 echo "Edit it to customize, then run: $0 --validate-profile $new_profile"
                 exit 0
+                ;;
+            --status)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/status-dashboard.sh" "$@"
+                exit $?
+                ;;
+            --interactive|-i)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                bash "${REPO_DIR}/scripts/interactive-setup.sh"
+                exit $?
                 ;;
             *)
                 echo "Error: Unknown option: $1"
