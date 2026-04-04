@@ -84,36 +84,44 @@ install_packages_xbps() {
     sudo xbps-install -S $packages
 }
 
+generate_brewfile() {
+    local packages="$1"
+    for package in $packages; do
+        echo "brew \"$package\""
+    done
+}
+
 install_packages_homebrew() {
     log_info "Installing packages with homebrew..."
 
     local packages="$1"
 
     if [[ "$DRY_RUN" == true ]]; then
-        echo "Would install: $packages"
+        echo "Would install via Brewfile:"
+        generate_brewfile "$packages"
         return
     fi
 
-    # Update Homebrew once before batch install
-    brew update --quiet
+    # Generate a temporary Brewfile
+    local brewfile
+    brewfile=$(mktemp)
+    generate_brewfile "$packages" > "$brewfile"
 
-    # Homebrew handles multiple packages in one command efficiently
-    local failed_packages=""
-    if ! brew install $packages 2>/dev/null; then
-        # If batch fails, fall back to one-by-one to identify failures
+    log_info "Generated Brewfile with $(wc -l < "$brewfile") entries"
+
+    # brew bundle handles formulas, casks, and taps natively
+    if ! brew bundle --file="$brewfile" --no-lock; then
+        log_warn "Some Brewfile entries failed, retrying individually..."
         for package in $packages; do
             if ! brew install "$package" 2>/dev/null; then
-                log_warn "Failed to install: $package (may be a cask)"
                 if ! brew install --cask "$package" 2>/dev/null; then
-                    failed_packages="$failed_packages $package"
+                    log_warn "Failed to install: $package"
                 fi
             fi
         done
     fi
 
-    if [[ -n "$failed_packages" ]]; then
-        log_warn "Failed to install:$failed_packages"
-    fi
+    rm -f "$brewfile"
 }
 
 install_packages_pkg() {
