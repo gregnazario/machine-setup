@@ -78,6 +78,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Init bats submodules
+        run: git submodule update --init --recursive tests/libs/
+
+      - name: Run bats test suite
+        run: tests/libs/bats-core/bin/bats tests/bats/*.bats
 
       - name: Profile loader
         run: |
