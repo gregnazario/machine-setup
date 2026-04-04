@@ -117,8 +117,33 @@ jobs:
           - termux
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Init bats submodules
+        run: git submodule update --init --recursive tests/libs/
       - name: Validate ${{ matrix.platform }} package definitions
-        run: bash tests/unit/test-platform-packages.sh ${{ matrix.platform }}
+        run: |
+          source scripts/ini-parser.sh
+          PLATFORM_FILE="packages/platforms/${{ matrix.platform }}.conf"
+          if [[ ! -f "$PLATFORM_FILE" ]]; then
+            echo "❌ Platform file not found: $PLATFORM_FILE"
+            exit 1
+          fi
+          NAME=$(ini_get "$PLATFORM_FILE" "platform" "name" "")
+          if [[ -z "$NAME" ]]; then
+            echo "❌ Missing 'name' field in $PLATFORM_FILE"
+            exit 1
+          fi
+          if [[ "$NAME" != "${{ matrix.platform }}" ]]; then
+            echo "❌ Name mismatch: expected '${{ matrix.platform }}', got '$NAME'"
+            exit 1
+          fi
+          PKG_MGR=$(ini_get "$PLATFORM_FILE" "platform" "package_manager" "")
+          if [[ -z "$PKG_MGR" ]]; then
+            echo "❌ Missing 'package_manager' field in $PLATFORM_FILE"
+            exit 1
+          fi
+          echo "✅ ${{ matrix.platform }}: name=$NAME, package_manager=$PKG_MGR"
 
   # ============================================================
   # Native runners: Ubuntu, macOS, Windows
@@ -318,7 +343,15 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             nixos/nix:latest \
-            bash -c "nix-channel --update && bash tests/platform-test.sh nixos nix"
+            bash -c "
+              # nixos/nix image doesn't have /etc/os-release with ID=nixos by default
+              # Create it so platform detection works
+              mkdir -p /etc
+              echo 'ID=nixos' > /etc/os-release
+              echo 'NAME=NixOS' >> /etc/os-release
+              nix-channel --update
+              bash tests/platform-test.sh nixos nix
+            "
 
   # ============================================================
   # FreeBSD via QEMU VM (no Docker image available)
