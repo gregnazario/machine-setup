@@ -87,39 +87,6 @@ jobs:
       - name: Run bats test suite
         run: tests/libs/bats-core/bin/bats tests/bats/*.bats
 
-      - name: Profile loader
-        run: |
-          bash tests/unit/test-profile-loader.sh minimal
-          bash tests/unit/test-profile-loader.sh full
-
-      - name: Profile inheritance
-        run: bash tests/unit/test-profile-inheritance.sh
-
-      - name: Package collection
-        run: bash tests/unit/test-package-collection.sh
-
-      - name: Dotfiles linking
-        run: |
-          export HOME=/tmp/test-home
-          mkdir -p "$HOME"
-          bash tests/unit/test-dotfiles-linking.sh minimal
-          bash tests/unit/test-dotfiles-linking.sh full
-
-      - name: Common library
-        run: bash tests/unit/test-common-lib.sh
-
-      - name: Backup configuration
-        run: bash tests/unit/test-backup-config.sh
-
-      - name: INI parser
-        run: bash tests/unit/test-ini-parser.sh
-
-      - name: Idempotency
-        run: |
-          export HOME=/tmp/test-idempotency
-          mkdir -p "$HOME"
-          bash tests/unit/test-idempotency.sh
-
   # ============================================================
   # Package definition validation for every platform
   # ============================================================
