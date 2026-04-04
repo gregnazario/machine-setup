@@ -49,6 +49,7 @@ Options:
     --list-profiles          List available profiles
     --show-profile <name>    Show details of a specific profile
     --validate-profile <name>  Validate a profile's configuration
+    --update                 Pull latest changes and re-run setup
     --create-profile <name>  Create a new profile from template
     --unlink                 Remove dotfile symlinks (use with --profile)
     --check                  Check health of current setup (use with --profile)
@@ -211,6 +212,21 @@ parse_args() {
                 shift
                 bash "${REPO_DIR}/scripts/check-health.sh" "$@"
                 exit $?
+                ;;
+            --update)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                log_info "Updating machine-setup..."
+                if git -C "${REPO_DIR}" pull --ff-only; then
+                    log_success "Updated to latest version"
+                    log_info "Re-running setup with current profile..."
+                    shift
+                    exec bash "${REPO_DIR}/setup.sh" "$@"
+                else
+                    log_error "Update failed. You may have local changes."
+                    log_info "Try: git -C ${REPO_DIR} stash && ./setup.sh --update"
+                    exit 1
+                fi
                 ;;
             --create-profile)
                 if [[ $# -lt 2 ]]; then
