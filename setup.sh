@@ -68,6 +68,7 @@ Supported Platforms:
     - Void Linux (xbps)
     - Arch Linux (pacman)
     - Alpine Linux (apk)
+    - NixOS (nix)
     - OpenSUSE (zypper)
     - Rocky Linux (dnf)
     - AlmaLinux (dnf)
@@ -76,6 +77,7 @@ Supported Platforms:
     - FreeBSD (pkg)
     - Windows 11 (winget)
     - WSL2 (apt)
+    - Termux (pkg)
 EOF
 }
 

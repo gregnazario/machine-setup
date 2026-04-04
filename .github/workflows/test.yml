@@ -138,6 +138,8 @@ jobs:
           - freebsd
           - windows
           - wsl
+          - nixos
+          - termux
     steps:
       - uses: actions/checkout@v4
       - name: Validate ${{ matrix.platform }} package definitions
@@ -329,6 +331,20 @@ jobs:
             gentoo/stage3:latest \
             bash tests/platform-test.sh gentoo emerge
 
+  docker-nixos:
+    name: "Docker: NixOS"
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run platform test in NixOS container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            nixos/nix:latest \
+            bash -c "nix-channel --update && bash tests/platform-test.sh nixos nix"
+
   # ============================================================
   # FreeBSD via QEMU VM (no Docker image available)
   # ============================================================
@@ -445,6 +461,7 @@ jobs:
       - docker-alma
       - docker-void
       - docker-gentoo
+      - docker-nixos
       - vm-freebsd
       - qemu-raspberrypios
       - e2e
@@ -469,6 +486,7 @@ jobs:
             "${{ needs.docker-alma.result }}"
             "${{ needs.docker-void.result }}"
             "${{ needs.docker-gentoo.result }}"
+            "${{ needs.docker-nixos.result }}"
             "${{ needs.vm-freebsd.result }}"
             "${{ needs.qemu-raspberrypios.result }}"
             "${{ needs.e2e.result }}"
