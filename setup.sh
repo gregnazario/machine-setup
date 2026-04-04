@@ -53,6 +53,7 @@ Options:
     --create-profile <name>  Create a new profile from template
     --unlink                 Remove dotfile symlinks (use with --profile)
     --check                  Check health of current setup (use with --profile)
+    --diff-profiles <a> <b>  Compare two profiles
     --secrets <action>       Manage secrets (pull, push, list, status, init, set-provider)
     --status                 Show status dashboard of current setup
     -i, --interactive        Interactive setup wizard
@@ -277,6 +278,16 @@ PROFILE_EOF
                 echo "Created profile: $profile_path"
                 echo "Edit it to customize, then run: $0 --validate-profile $new_profile"
                 exit 0
+                ;;
+            --diff-profiles)
+                if [[ $# -lt 3 ]]; then
+                    echo "Error: --diff-profiles requires two profile names"
+                    exit 1
+                fi
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                bash "${REPO_DIR}/scripts/diff-profiles.sh" "$2" "$3"
+                exit $?
                 ;;
             --secrets)
                 if [[ $# -lt 2 ]]; then
