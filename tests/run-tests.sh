@@ -81,6 +81,34 @@ for test_file in "${SCRIPT_DIR}"/e2e/*.sh; do
     fi
 done
 
+# Run bats tests (if bats is available)
+echo ""
+echo "========================================="
+echo "Bats Tests"
+echo "========================================="
+
+BATS_BIN="${SCRIPT_DIR}/libs/bats-core/bin/bats"
+if [[ -x "$BATS_BIN" ]]; then
+    for bats_file in "${SCRIPT_DIR}"/bats/*.bats; do
+        if [[ -f "$bats_file" ]]; then
+            test_name=$(basename "$bats_file" .bats)
+            TOTAL=$((TOTAL + 1))
+            echo ""
+            echo "Running: $test_name (bats)"
+            echo "----------------------------------------"
+            if "$BATS_BIN" "$bats_file" 2>&1; then
+                echo "✅ PASS: $test_name"
+                PASSED=$((PASSED + 1))
+            else
+                echo "❌ FAIL: $test_name"
+                FAILED=$((FAILED + 1))
+            fi
+        fi
+    done
+else
+    echo "⏭️  Bats not installed (run: git submodule update --init)"
+fi
+
 # Summary
 echo ""
 echo "========================================="
