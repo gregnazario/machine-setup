@@ -65,6 +65,8 @@ Examples:
     $0 --profile full --no-backup      # Full profile, skip backup
     $0 --list-profiles                 # List all profiles
 
+    Custom extensions can be placed in custom/ directory (see docs)
+
 Supported Platforms:
     - Fedora (dnf)
     - Ubuntu (apt)
@@ -359,6 +361,14 @@ main() {
         else
             echo "  Would setup backup with Restic"
         fi
+    fi
+
+    # Load custom extensions
+    if [[ -d "${REPO_DIR}/custom" ]] || [[ -d "${MACHINE_SETUP_CUSTOM:-}" ]]; then
+        log_info "Loading custom extensions..."
+        source "${REPO_DIR}/scripts/load-custom.sh"
+        run_custom_scripts
+        link_custom_dotfiles
     fi
 
     if [[ "$DRY_RUN" == true ]]; then
