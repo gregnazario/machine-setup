@@ -55,6 +55,8 @@ Options:
     --check                  Check health of current setup (use with --profile)
     --diff-profiles <a> <b>  Compare two profiles
     --secrets <action>       Manage secrets (pull, push, list, status, init, set-provider)
+    --remote <user@host>     Run setup on a remote machine via SSH
+    --fleet <action>         Manage fleet of machines (register, list, setup, setup-all)
     --status                 Show status dashboard of current setup
     -i, --interactive        Interactive setup wizard
     -h, --help               Show this help message
@@ -300,11 +302,25 @@ PROFILE_EOF
                 bash "${REPO_DIR}/scripts/secrets/secrets-manager.sh" "$@"
                 exit $?
                 ;;
+            --fleet)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/fleet-manager.sh" "$@"
+                exit $?
+                ;;
             --status)
                 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
                 ensure_repo
                 shift
                 bash "${REPO_DIR}/scripts/status-dashboard.sh" "$@"
+                exit $?
+                ;;
+            --remote)
+                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+                ensure_repo
+                shift
+                bash "${REPO_DIR}/scripts/remote-setup.sh" "$@"
                 exit $?
                 ;;
             --interactive|-i)
