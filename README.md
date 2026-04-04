@@ -4,12 +4,17 @@ Cross-platform machine configuration and syncing system with profile-based packa
 
 ## Features
 
-- **Cross-Platform Support**: Fedora, Ubuntu, Debian, Gentoo, Void, Arch, Alpine, OpenSUSE, Rocky, Alma, RaspberryPiOS, macOS, FreeBSD, Windows 11
+- **Cross-Platform Support**: Fedora, Ubuntu, Debian, Gentoo, Void, Arch, Alpine, OpenSUSE, Rocky, Alma, RaspberryPiOS, macOS, FreeBSD, Windows 11, WSL2, NixOS, Termux
 - **Profile System**: Minimal, full, or custom configurations
 - **Dotfiles Sync**: Real-time synchronization via Syncthing
 - **Secrets Management**: Encrypted secrets with git-crypt
 - **Automated Backups**: Daily encrypted backups with Restic to BackBlaze B2 or S3
 - **Package Management**: Unified INI-based package definitions
+- **Health Check**: Verify setup state with `--check`
+- **Dry-Run Diff**: Colored diff showing current vs desired state
+- **Profile Validation**: Verify profile configuration before running
+- **Nix Flake**: Declarative dev shells for NixOS users
+- **Bats Testing**: Comprehensive test suite with bats-core
 
 ## Quick Start
 
@@ -45,6 +50,9 @@ curl -fsSL https://raw.githubusercontent.com/yourusername/machine-setup/main/set
 | macOS | Homebrew | full |
 | FreeBSD | pkg + ports | full |
 | Windows 11 | winget | full |
+| WSL2 | apt | full |
+| NixOS | nix | full |
+| Termux (Android) | pkg | full |
 
 ## Profiles
 
@@ -106,6 +114,18 @@ Then run:
 ./setup.sh --profile my-custom
 ```
 
+### NixOS Users
+
+NixOS users can use the Nix flake instead of `setup.sh` for packages:
+
+```bash
+# Minimal profile dev shell
+nix develop
+
+# Full profile dev shell
+nix develop .#full
+```
+
 ## Usage
 
 ### Basic Commands
@@ -131,6 +151,21 @@ Then run:
 
 # Show profile details
 ./setup.sh --show-profile full
+
+# Validate a profile's configuration
+./setup.sh --validate-profile minimal
+
+# Check health of current setup
+./setup.sh --check --profile minimal
+
+# Remove managed dotfile symlinks
+./setup.sh --unlink --profile minimal
+
+# Create a new custom profile from template
+./setup.sh --create-profile my-custom
+
+# Update to latest version
+./setup.sh --update
 ```
 
 ### Individual Scripts
@@ -338,34 +373,24 @@ Each platform has its own package file in `packages/platforms/`:
 - `freebsd.conf`
 - `raspberrypios.conf`
 - `windows.conf`
+- `wsl.conf`
+- `nixos.conf`
+- `termux.conf`
 
 ## Customization
 
 ### Creating Custom Profiles
 
-1. Create a new profile file:
-   ```bash
-   cp profiles/server.conf.example profiles/my-server.conf
-   ```
+```bash
+# Create a new profile from template
+./setup.sh --create-profile my-server
 
-2. Edit the profile:
-   ```ini
-   [profile]
-   name = my-server
-   description = My custom server setup
-   extends = minimal
+# Validate it
+./setup.sh --validate-profile my-server
 
-   [packages]
-   monitoring = prometheus-node-exporter grafana
-
-   [services]
-   enable = prometheus-node-exporter
-   ```
-
-3. Run with your profile:
-   ```bash
-   ./setup.sh --profile my-server
-   ```
+# Run with your profile
+./setup.sh --profile my-server
+```
 
 ### Platform-Specific Setup
 
@@ -423,6 +448,21 @@ gpg --edit-key YOUR_KEY_ID
 2. Check repository exists (create with `restic init` if needed)
 3. Ensure password is correct
 4. Check network connectivity to B2/S3
+
+## Testing
+
+Tests use [bats-core](https://github.com/bats-core/bats-core).
+
+```bash
+# Initialize test dependencies
+git submodule update --init --recursive tests/libs/
+
+# Run all tests
+bash tests/run-tests.sh
+
+# Run bats tests directly
+tests/libs/bats-core/bin/bats tests/bats/*.bats
+```
 
 ## Contributing
 
