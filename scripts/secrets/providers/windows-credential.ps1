@@ -43,9 +43,17 @@ function Ensure-SecretsDir {
 }
 
 function Get-SecretPath([string]$name) {
-    # Sanitise key: replace characters not safe for filenames
-    $safeName = $name -replace '[\\/:*?"<>|]', '_'
-    return Join-Path $SecretsDir "$safeName.dat"
+    # Use base64-encoded filenames to avoid lossy character translation
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($name)) -replace '[/+=]', '_'
+    return Join-Path $SecretsDir "$encoded.dat"
+}
+
+function Get-OriginalName([string]$fileName) {
+    $encoded = [IO.Path]::GetFileNameWithoutExtension($fileName) -replace '_', '+'
+    # Pad base64 if needed
+    $mod = $encoded.Length % 4
+    if ($mod -ne 0) { $encoded += '=' * (4 - $mod) }
+    return [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))
 }
 
 function Protect-String([string]$plaintext) {
@@ -91,7 +99,8 @@ switch ($Action) {
         Ensure-SecretsDir
         $prefix = if ($Key) { $Key } else { "" }
         Get-ChildItem -Path $SecretsDir -Filter "*.dat" -ErrorAction SilentlyContinue |
-            ForEach-Object { $_.BaseName -replace '_', '/' } |
+            Where-Object { $_.Name -notmatch '^cache-' } |
+            ForEach-Object { Get-OriginalName $_.Name } |
             Where-Object { $_ -like "$prefix*" } |
             ForEach-Object { Write-Output $_ }
     }

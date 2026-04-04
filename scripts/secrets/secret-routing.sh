@@ -172,7 +172,12 @@ route_to_ini() {
     local key="$4"
 
     # Resolve to absolute path
-    if [[ "$dest_file" != /* ]]; then
+    # shellcheck disable=SC2088
+    if [[ "$dest_file" == "~/"* ]]; then
+        dest_file="${HOME}/${dest_file#"~/"}"
+    elif [[ "$dest_file" == "~" ]]; then
+        dest_file="$HOME"
+    elif [[ "$dest_file" != /* ]]; then
         dest_file="${_SR_REPO_DIR}/${dest_file}"
     fi
 
@@ -185,8 +190,11 @@ route_to_ini() {
 
     # If file does not exist, create it with the section and key
     if [[ ! -f "$dest_file" ]]; then
-        printf '[%s]\n%s = %s\n' "$section" "$key" "$value" > "$dest_file"
-        return 0
+        local parent_dir
+        parent_dir="$(dirname "$dest_file")"
+        mkdir -p "$parent_dir"
+        (umask 077 && printf '[%s]\n%s = %s\n' "$section" "$key" "$value" > "$dest_file")
+        return $?
     fi
 
     # Check if section exists
@@ -245,7 +253,12 @@ route_to_file() {
     local mode="${3:-0600}"
 
     # Resolve to absolute path
-    if [[ "$dest_file" != /* ]]; then
+    # shellcheck disable=SC2088
+    if [[ "$dest_file" == "~/"* ]]; then
+        dest_file="${HOME}/${dest_file#"~/"}"
+    elif [[ "$dest_file" == "~" ]]; then
+        dest_file="$HOME"
+    elif [[ "$dest_file" != /* ]]; then
         dest_file="${_SR_REPO_DIR}/${dest_file}"
     fi
 
@@ -280,6 +293,9 @@ route_to_env() {
     local value="$1"
     local var_name="$2"
 
+    # NOTE: When secrets-manager.sh is run as a subprocess (bash scripts/secrets/...),
+    # exported variables won't be visible to the parent. For env destinations to work
+    # in the setup flow, setup.sh should source secrets-manager.sh instead.
     log_info "Exporting secret to env var: ${var_name}"
     export "${var_name}=${value}"
 }

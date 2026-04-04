@@ -2,6 +2,18 @@
 
 setup() {
     load '../test_helper'
+    # Back up existing secrets.conf if present
+    if [[ -f "$REPO_ROOT/secrets.conf" ]]; then
+        cp "$REPO_ROOT/secrets.conf" "$REPO_ROOT/secrets.conf.test-backup"
+    fi
+}
+
+teardown() {
+    # Restore original secrets.conf
+    rm -f "$REPO_ROOT/secrets.conf"
+    if [[ -f "$REPO_ROOT/secrets.conf.test-backup" ]]; then
+        mv "$REPO_ROOT/secrets.conf.test-backup" "$REPO_ROOT/secrets.conf"
+    fi
 }
 
 @test "setup.sh --help mentions --secrets" {
@@ -32,8 +44,6 @@ setup() {
     run bash scripts/secrets/secrets-manager.sh init
     assert_success
     assert [ -f "$REPO_ROOT/secrets.conf" ]
-    # Clean up
-    rm -f "$REPO_ROOT/secrets.conf"
 }
 
 @test "secrets-manager.sh set-provider without name shows usage error" {
@@ -43,8 +53,6 @@ setup() {
     run bash scripts/secrets/secrets-manager.sh set-provider
     assert_failure
     assert_output --partial "set-provider"
-    # Clean up
-    rm -f "$REPO_ROOT/secrets.conf"
 }
 
 @test "secrets-manager.sh set-provider updates provider in config" {
@@ -53,6 +61,4 @@ setup() {
     run bash scripts/secrets/secrets-manager.sh set-provider bitwarden
     assert_success
     assert_output --partial "bitwarden"
-    # Clean up
-    rm -f "$REPO_ROOT/secrets.conf"
 }

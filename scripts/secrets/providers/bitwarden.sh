@@ -55,24 +55,30 @@ provider_store_secret() {
     existing="$(bw get item "$key" 2>/dev/null)" || true
 
     if [[ -n "$existing" ]]; then
-        # Update existing item
         local item_id
-        item_id="$(echo "$existing" | grep -o '"id":"[^"]*"' | head -1 | sed 's/"id":"//;s/"//')"
+        item_id="$(printf '%s' "$existing" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')" || return 1
         local encoded
-        encoded="$(echo "$existing" \
-            | sed "s/\"password\":\"[^\"]*\"/\"password\":\"${value}\"/" \
-            | bw encode)"
+        encoded="$(printf '%s' "$existing" | python3 -c '
+import json,sys
+data = json.load(sys.stdin)
+data["name"] = sys.argv[1]
+data.setdefault("login",{})["password"] = sys.argv[2]
+print(json.dumps(data))
+' "$key" "$value" | bw encode)" || return 1
         bw edit item "$item_id" "$encoded" >/dev/null 2>&1 || return 1
     else
         # Create new login item with the secret as password
         local template
         template="$(bw get template item)" || return 1
         local encoded
-        encoded="$(echo "$template" \
-            | sed "s/\"name\":\"[^\"]*\"/\"name\":\"${key}\"/" \
-            | sed "s/\"password\":null/\"password\":\"${value}\"/" \
-            | sed 's/"type":0/"type":1/' \
-            | bw encode)"
+        encoded="$(printf '%s' "$template" | python3 -c '
+import json,sys
+data = json.load(sys.stdin)
+data["name"] = sys.argv[1]
+data["type"] = 1
+data.setdefault("login",{})["password"] = sys.argv[2]
+print(json.dumps(data))
+' "$key" "$value" | bw encode)" || return 1
         bw create item "$encoded" >/dev/null 2>&1 || return 1
     fi
 }
