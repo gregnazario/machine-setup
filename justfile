@@ -15,6 +15,10 @@ setup *ARGS:
 setup-profile profile *ARGS:
     bash setup.sh --profile {{profile}} {{ARGS}}
 
+# Run setup on a remote machine via SSH
+remote host *ARGS:
+    bash setup.sh --remote {{host}} {{ARGS}}
+
 # Run interactive setup wizard
 interactive:
     bash setup.sh --interactive
