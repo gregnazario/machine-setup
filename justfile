@@ -85,6 +85,14 @@ secrets-status:
 secrets-init:
     bash setup.sh --secrets init
 
+# Rotate all secrets (generate new values, push to provider, update local)
+secrets-rotate *ARGS:
+    bash scripts/secrets/secrets-manager.sh rotate {{ARGS}}
+
+# Rotate a specific secret by name
+secrets-rotate-one name *ARGS:
+    bash scripts/secrets/secrets-manager.sh rotate {{name}} {{ARGS}}
+
 # Configure secrets provider
 secrets-set-provider provider:
     bash setup.sh --secrets set-provider {{provider}}
