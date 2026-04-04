@@ -68,3 +68,9 @@ build/
 
 # Nix
 flake.lock
+
+# Custom extensions (user-specific, not tracked)
+custom/profiles/
+custom/packages/
+custom/scripts/
+custom/dotfiles/
