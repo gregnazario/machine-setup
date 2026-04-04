@@ -25,6 +25,10 @@ detect_platform() {
         # Android Termux
         PLATFORM="termux"
         PACKAGE_MANAGER="termux-pkg"
+    elif [[ -f /dev/.cros_milestone ]] || [[ -n "${CHROMEOS_RELEASE_NAME:-}" ]]; then
+        # ChromeOS Crostini (Debian-based Linux container)
+        PLATFORM="chromeos"
+        PACKAGE_MANAGER="apt"
     elif [[ -f /etc/os-release ]]; then
         source /etc/os-release
         
@@ -79,7 +83,7 @@ detect_platform() {
                 ;;
             *)
                 log_error "Unsupported Linux distribution: $ID"
-                log_error "Supported: fedora, ubuntu, debian, gentoo, void, nixos, raspbian, arch, alpine, opensuse, rocky, alma, wsl, termux"
+                log_error "Supported: fedora, ubuntu, debian, gentoo, void, nixos, raspbian, arch, alpine, opensuse, rocky, alma, wsl, termux, chromeos"
                 exit 1
                 ;;
         esac
