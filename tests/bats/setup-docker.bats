@@ -82,7 +82,6 @@ teardown() {
 }
 
 @test "setup-docker.sh fails when docker is not on PATH" {
-    # No docker mock — command -v docker will fail
     # Provide a mock for groups so it doesn't fail earlier
     cat > "$MOCK_BIN/groups" <<'EOF'
 #!/usr/bin/env bash
@@ -90,8 +89,14 @@ echo "staff wheel"
 EOF
     chmod +x "$MOCK_BIN/groups"
 
-    # Remove docker from PATH by using only our mock bin + essential dirs
-    run env PATH="$MOCK_BIN:/usr/bin:/bin" bash "$WRAPPER"
+    # Create a wrapper variant where the docker check always fails,
+    # since CI runners may have docker pre-installed at /usr/bin/docker
+    # making PATH manipulation unreliable.
+    local NO_DOCKER_WRAPPER="$MOCK_BIN/run-no-docker.sh"
+    sed 's|command -v docker|command -v __nonexistent_docker__|' "$WRAPPER" > "$NO_DOCKER_WRAPPER"
+    chmod +x "$NO_DOCKER_WRAPPER"
+
+    run env PATH="$MOCK_BIN:/usr/bin:/bin" bash "$NO_DOCKER_WRAPPER"
     assert_failure
     assert_output --partial "Docker is not installed"
 }
