@@ -101,11 +101,31 @@ check_services() {
     done <<< "$services"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Verify installed packages, dotfile symlinks, and service status.
+
+Options:
+    -p, --profile <name>  Profile to check (required)
+    -h, --help            Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") -p full
+EOF
+    exit 0
+}
+
 main() {
     local profile=""
 
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                usage
+                ;;
             -p|--profile)
                 profile="$2"
                 shift 2

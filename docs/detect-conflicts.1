@@ -1,0 +1,37 @@
+.TH DETECT\-CONFLICTS 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+detect\-conflicts.sh \- scan for Syncthing conflict files and broken dotfile symlinks
+.SH SYNOPSIS
+.B detect\-conflicts.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Scans the dotfiles directory and \fB$HOME\fR for Syncthing conflict files
+(files matching the \fB.sync\-conflict\-*\fR pattern) and broken dotfile
+symlinks that no longer point to valid targets. Reports findings with
+paths and suggested resolutions.
+.SH OPTIONS
+.TP
+.BR \-p ", " \-\-profile " " \fINAME\fR
+Profile whose dotfile paths should be checked.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+No conflicts or broken symlinks found.
+.TP
+.B 1
+One or more conflicts or broken symlinks detected.
+.SH EXAMPLES
+.TP
+Scan for conflicts using the full profile:
+.B detect\-conflicts.sh \-\-profile full
+.TP
+Quick scan with short option:
+.B detect\-conflicts.sh \-p minimal
+.SH SEE ALSO
+.BR setup.sh (1),
+.BR syncthing (1)
+.SH AUTHORS
+Machine Setup contributors.

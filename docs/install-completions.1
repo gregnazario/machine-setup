@@ -1,0 +1,51 @@
+.TH INSTALL\-COMPLETIONS 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+install\-completions.sh \- install shell completions for setup.sh
+.SH SYNOPSIS
+.B install\-completions.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Installs shell completion scripts for \fBsetup.sh\fR into the appropriate
+system or user directories. Supports bash, zsh, and fish shells. By default,
+installs completions for the current shell only; use \fB\-\-all\fR to install
+for all supported shells.
+.SH OPTIONS
+.TP
+.B \-\-all
+Install completions for all supported shells (bash, zsh, fish).
+.TP
+.B \-\-bash
+Install bash completions only.
+.TP
+.B \-\-zsh
+Install zsh completions only.
+.TP
+.B \-\-fish
+Install fish completions only.
+.TP
+.B \-\-dry\-run
+Show what would be installed without writing any files.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Error (unsupported shell, missing completion directory, write failure).
+.SH EXAMPLES
+.TP
+Install completions for the current shell:
+.B install\-completions.sh
+.TP
+Install completions for all shells:
+.B install\-completions.sh \-\-all
+.TP
+Preview zsh completion installation:
+.B install\-completions.sh \-\-zsh \-\-dry\-run
+.SH SEE ALSO
+.BR setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

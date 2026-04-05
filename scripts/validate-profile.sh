@@ -19,9 +19,29 @@ validate_name() {
     fi
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") --profile <name>
+
+Validate a profile configuration file before running setup.
+
+Options:
+    --profile <name>  Profile to validate (required)
+    -h, --help        Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") --profile full
+EOF
+    exit 0
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                usage
+                ;;
             --profile)
                 if [[ $# -lt 2 ]]; then
                     log_error "Missing value for --profile"

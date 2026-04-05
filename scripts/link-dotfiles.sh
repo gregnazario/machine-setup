@@ -12,9 +12,32 @@ FORCE=false
 
 source "${SCRIPT_DIR}/lib/common.sh"
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Create dotfile symlinks from the profile configuration, with backup support.
+
+Options:
+    --profile <name>  Profile to use (default: auto-detected)
+    --dry-run         Show what would be linked without making changes
+    --force           Remove existing files instead of backing them up
+    -h, --help        Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") --profile full --dry-run
+    $(basename "$0") --profile full --force
+EOF
+    exit 0
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                usage
+                ;;
             --profile)
                 PROFILE="$2"
                 shift 2

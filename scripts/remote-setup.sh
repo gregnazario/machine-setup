@@ -7,6 +7,28 @@ source "${SCRIPT_DIR}/lib/common.sh"
 
 REPO_URL="${MACHINE_SETUP_REPO:-https://github.com/yourusername/machine-setup.git}"
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") <user@host> [OPTIONS]
+
+Run machine-setup on a remote host via SSH.
+
+Options:
+    -p, --profile <name>  Profile to use on the remote machine
+    --dry-run             Preview commands without executing
+    --no-packages         Skip package installation
+    --no-dotfiles         Skip dotfile linking
+    --no-syncthing        Skip Syncthing setup
+    --no-backup           Skip backup setup
+    -h, --help            Show this help message
+
+Examples:
+    $(basename "$0") user@server --profile minimal
+    $(basename "$0") user@pi --profile raspberrypi --dry-run
+EOF
+    exit 0
+}
+
 main() {
     local remote_host=""
     local profile=""
@@ -15,6 +37,7 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help) usage ;;
             --profile|-p) profile="$2"; shift 2 ;;
             --dry-run) dry_run=true; shift ;;
             --no-packages|--no-dotfiles|--no-syncthing|--no-backup)

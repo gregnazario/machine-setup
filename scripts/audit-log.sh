@@ -65,8 +65,29 @@ audit_show() {
     echo ""
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") <command> [OPTIONS]
+
+View the machine-setup audit log. This file can also be sourced by
+other scripts to add audit logging.
+
+Commands:
+    show [count]    Show recent audit log entries (default: 20)
+
+Options:
+    -h, --help      Show this help message
+
+Examples:
+    $(basename "$0") show
+    $(basename "$0") show 50
+EOF
+    exit 0
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     case "${1:-}" in
+        -h|--help) usage ;;
         show) audit_show "${2:-20}" ;;
         *) echo "Usage: $0 show [count]" ;;
     esac

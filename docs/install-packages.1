@@ -1,0 +1,49 @@
+.TH INSTALL\-PACKAGES 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+install\-packages.sh \- install packages using platform-specific package managers
+.SH SYNOPSIS
+.B install\-packages.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Installs packages defined in profile and package configuration files using
+the appropriate platform-specific package manager. Supports apt, dnf, pacman,
+emerge, xbps-install, apk, zypper, pkg, Homebrew, and winget across 18
+platforms.
+.PP
+Packages are resolved from common and platform-specific configuration files
+under \fBpackages/\fR, filtered by the active profile.
+.SH OPTIONS
+.TP
+.BR \-\-profile " " \fINAME\fR
+Profile to use for package selection (e.g., minimal, full, selfhosted).
+.TP
+.B \-\-dry\-run
+Print the commands that would be executed without installing anything.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH ENVIRONMENT
+.TP
+.B PROFILE
+Override the profile name. Equivalent to \fB\-\-profile\fR.
+.TP
+.B DRY_RUN
+Set to \fB1\fR to enable dry-run mode. Equivalent to \fB\-\-dry\-run\fR.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Error (unsupported platform, missing package manager, failed installation).
+.SH EXAMPLES
+.TP
+Install packages for the full profile:
+.B install\-packages.sh \-\-profile full
+.TP
+Preview what would be installed:
+.B install\-packages.sh \-\-profile minimal \-\-dry\-run
+.SH SEE ALSO
+.BR setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

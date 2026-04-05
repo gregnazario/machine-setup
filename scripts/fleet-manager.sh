@@ -164,6 +164,30 @@ main() {
     shift || true
 
     case "$action" in
+        -h|--help)
+            cat <<EOF
+Usage: $(basename "$0") <command> [OPTIONS]
+
+Manage a fleet of machines for coordinated setup.
+
+Commands:
+    register <name> <host> [--profile <p>]  Register a machine
+    remove <name>                           Remove a machine
+    list                                    List all machines
+    setup <name>                            Run setup on a machine
+    setup-all                               Run setup on all machines
+
+Options:
+    -h, --help    Show this help message
+
+Examples:
+    $(basename "$0") register myserver user@host --profile full
+    $(basename "$0") list
+    $(basename "$0") setup myserver
+    $(basename "$0") setup-all
+EOF
+            exit 0
+            ;;
         register)
             local name="${1:-}" host="${2:-}" profile="full"
             shift 2 || { echo "Usage: $0 register <name> <user@host> [--profile <p>]"; exit 1; }

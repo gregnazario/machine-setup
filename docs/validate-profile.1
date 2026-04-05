@@ -1,0 +1,36 @@
+.TH VALIDATE\-PROFILE 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+validate\-profile.sh \- validate profile configuration
+.SH SYNOPSIS
+.B validate\-profile.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Validates a profile configuration file for correctness. Checks that all
+required fields are present, dotfile source paths exist, package references
+resolve to known entries in the package configuration files, and inherited
+profiles are valid.
+.SH OPTIONS
+.TP
+.BR \-\-profile " " \fINAME\fR
+Profile to validate.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+Profile is valid.
+.TP
+.B 1
+Validation errors found (missing fields, broken paths, unknown packages).
+.SH EXAMPLES
+.TP
+Validate the full profile:
+.B validate\-profile.sh \-\-profile full
+.TP
+Validate a custom profile:
+.B validate\-profile.sh \-\-profile mysetup
+.SH SEE ALSO
+.BR setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

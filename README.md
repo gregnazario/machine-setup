@@ -13,6 +13,10 @@ Cross-platform machine configuration and syncing system with profile-based packa
 - **Health Check**: Verify setup state with `--check`
 - **Dry-Run Diff**: Colored diff showing current vs desired state
 - **Profile Validation**: Verify profile configuration before running
+- **Shell Completions**: Tab completion for bash, zsh, and fish
+- **Man Pages**: Full offline documentation via `man setup.sh`
+- **Built-in Help**: Every script supports `--help` for quick reference
+- **Fleet Management**: Manage multiple machines from a single repo
 - **Nix Flake**: Declarative dev shells for NixOS users
 - **Bats Testing**: Comprehensive test suite with bats-core
 
@@ -170,6 +174,8 @@ nix develop .#full
 
 ### Individual Scripts
 
+Every script supports `--help` (or `-h`) for usage details:
+
 ```bash
 # Install packages only
 ./scripts/install-packages.sh --profile full
@@ -182,6 +188,35 @@ nix develop .#full
 
 # Setup backup
 ./scripts/setup-backup.sh
+
+# Check health
+./scripts/check-health.sh --profile full
+
+# Show status dashboard
+./scripts/status-dashboard.sh --profile full
+
+# Validate a profile
+./scripts/validate-profile.sh --profile minimal
+
+# Detect dotfile conflicts
+./scripts/detect-conflicts.sh --profile full
+
+# Compare two profiles
+./scripts/diff-profiles.sh minimal full
+
+# Remote setup via SSH
+./scripts/remote-setup.sh user@host --profile minimal
+
+# Fleet management
+./scripts/fleet-manager.sh register myserver user@host full
+./scripts/fleet-manager.sh setup-all
+
+# GPG key management
+./scripts/gpg-manager.sh import key.asc
+
+# Get help for any script
+./scripts/install-packages.sh --help
+./scripts/fleet-manager.sh --help
 ```
 
 ## Directory Structure
@@ -201,7 +236,24 @@ machine-setup/
 │   ├── profiles/             # Profile-specific dotfiles
 │   └── .gitattributes        # git-crypt config
 ├── scripts/                   # Setup scripts
+│   ├── lib/common.sh         # Shared logging functions
+│   ├── install-packages.sh   # Package installer
+│   ├── link-dotfiles.sh      # Dotfile linker
+│   ├── check-health.sh       # Health checker
+│   ├── fleet-manager.sh      # Fleet management
+│   ├── remote-setup.sh       # Remote SSH setup
+│   ├── install-completions.sh # Shell completion installer
+│   ├── secrets/              # Secrets management
 │   └── utils/                # Platform-specific helpers
+├── completions/               # Shell completions
+│   ├── setup.bash            # Bash completion
+│   ├── setup.zsh             # Zsh completion
+│   └── setup.fish            # Fish completion
+├── docs/                      # Man pages and documentation
+│   ├── setup.sh.1            # Main man page
+│   ├── install-packages.1    # Package installer man page
+│   ├── fleet-manager.1       # Fleet management man page
+│   └── *.1                   # Additional man pages
 ├── backup/                    # Backup configuration
 └── tests/                     # Test suite
 ```
@@ -398,6 +450,84 @@ For platform-specific customizations, edit the appropriate file:
 - `scripts/utils/gentoo-setup.sh`
 - `scripts/utils/void-setup.sh`
 - `scripts/utils/freebsd-setup.sh`
+
+## Getting Help
+
+### Built-in Help
+
+Every script supports `--help` or `-h`:
+
+```bash
+./setup.sh --help
+./scripts/install-packages.sh --help
+./scripts/fleet-manager.sh --help
+./scripts/check-health.sh -h
+```
+
+### Man Pages
+
+Man pages are available for all major scripts. Install them with:
+
+```bash
+./scripts/install-completions.sh --man-pages
+```
+
+Then use `man` to read them:
+
+```bash
+man setup.sh
+man install-packages
+man fleet-manager
+man check-health
+man link-dotfiles
+man remote-setup
+man validate-profile
+man detect-conflicts
+man dry-run-diff
+man status-dashboard
+man install-completions
+```
+
+Or read them directly without installing:
+
+```bash
+man docs/setup.sh.1
+```
+
+### Shell Completions
+
+Tab completion is available for bash, zsh, and fish — covering `setup.sh` and all sub-scripts.
+
+```bash
+# Auto-detect your shell and install
+./scripts/install-completions.sh
+
+# Install for a specific shell
+./scripts/install-completions.sh --bash
+./scripts/install-completions.sh --zsh
+./scripts/install-completions.sh --fish
+
+# Install for all shells + man pages
+./scripts/install-completions.sh --all
+
+# Preview without installing
+./scripts/install-completions.sh --all --dry-run
+```
+
+After installation, restart your shell or source the completion file:
+
+```bash
+# Bash
+source ~/.bash_completion.d/setup.sh
+
+# Zsh (add to .zshrc)
+fpath=(~/.zsh/completions $fpath)
+autoload -Uz compinit && compinit
+
+# Fish (auto-loaded from ~/.config/fish/completions/)
+```
+
+Completions cover all flags, profile names, fleet machine names, subcommands (secrets, fleet, gpg), and more.
 
 ## Security Best Practices
 

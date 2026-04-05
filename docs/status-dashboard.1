@@ -1,0 +1,34 @@
+.TH STATUS\-DASHBOARD 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+status\-dashboard.sh \- display comprehensive setup status
+.SH SYNOPSIS
+.B status\-dashboard.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Displays a comprehensive status dashboard covering platform information,
+installed package versions, dotfile symlink state, git-crypt unlock status,
+Syncthing synchronization, backup configuration, and managed service health.
+.PP
+Useful for quickly auditing the state of a configured machine.
+.SH OPTIONS
+.TP
+.BR \-p ", " \-\-profile " " \fINAME\fR
+Profile to report status for.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.SH EXAMPLES
+.TP
+Show status for the full profile:
+.B status\-dashboard.sh \-\-profile full
+.TP
+Show status for the minimal profile:
+.B status\-dashboard.sh \-p minimal
+.SH SEE ALSO
+.BR setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

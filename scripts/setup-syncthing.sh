@@ -105,7 +105,23 @@ enable_syncthing_service() {
     log_success "Syncthing service enabled"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Initialize Syncthing configuration and enable it as a system service.
+
+Options:
+    -h, --help    Show this help message
+EOF
+    exit 0
+}
+
 main() {
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
+
     detect_platform
     log_info "Setting up Syncthing for platform: $PLATFORM"
     

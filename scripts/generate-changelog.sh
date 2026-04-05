@@ -97,6 +97,29 @@ generate_changelog() {
     log_info "Total entries: $count"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [output-file] [since-ref]
+
+Generate a changelog from conventional git commits.
+
+Arguments:
+    output-file    Output file path (default: CHANGELOG.md in repo root)
+    since-ref      Git ref to start from (default: all commits)
+
+Options:
+    -h, --help     Show this help message
+
+Examples:
+    $(basename "$0")
+    $(basename "$0") CHANGELOG.md v1.0.0
+EOF
+    exit 0
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
     generate_changelog
 fi

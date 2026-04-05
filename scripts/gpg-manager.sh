@@ -119,6 +119,28 @@ main() {
     shift || true
 
     case "$action" in
+        -h|--help)
+            cat <<EOF
+Usage: $(basename "$0") <command> [OPTIONS]
+
+Manage GPG keys and git-crypt integration.
+
+Commands:
+    import <keyfile>           Import a GPG key and add to git-crypt
+    export [--output <file>]   Export public GPG key
+    list                       List GPG keys and git-crypt status
+    status                     Show GPG key status and expiry
+
+Options:
+    -h, --help    Show this help message
+
+Examples:
+    $(basename "$0") import mykey.asc
+    $(basename "$0") export --output pubkey.asc
+    $(basename "$0") status
+EOF
+            exit 0
+            ;;
         import)
             gpg_import "$@"
             ;;

@@ -12,9 +12,30 @@ DRY_RUN="${DRY_RUN:-false}"
 
 source "${SCRIPT_DIR}/lib/common.sh"
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Install packages using the platform-specific package manager.
+
+Options:
+    --profile <name>  Profile to use (default: auto-detected)
+    --dry-run         Show what would be installed without making changes
+    -h, --help        Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") --profile full --dry-run
+EOF
+    exit 0
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                usage
+                ;;
             --profile)
                 PROFILE="$2"
                 shift 2

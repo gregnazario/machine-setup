@@ -85,12 +85,31 @@ generate_html() {
 HTMLEOF
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Generate and serve an HTML status dashboard on a local web server.
+
+Options:
+    -p, --port <port>     Port to serve on (default: 8080)
+    --profile <name>      Profile to display (default: auto)
+    -h, --help            Show this help message
+
+Examples:
+    $(basename "$0")
+    $(basename "$0") --port 3000 --profile minimal
+EOF
+    exit 0
+}
+
 main() {
     local port="$PORT"
     export PROFILE="${PROFILE:-auto}"
 
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help) usage ;;
             --port|-p) port="$2"; shift 2 ;;
             --profile) export PROFILE="$2"; shift 2 ;;
             *) shift ;;
