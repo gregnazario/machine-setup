@@ -22,6 +22,26 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                cat <<EOF
+Usage: $(basename "$0") <profile> [OPTIONS]
+
+Build a Docker image with the given profile pre-installed.
+
+Options:
+    --profile, -p <name>  Profile to install (required)
+    --tag, -t <name>      Image tag (default: machine-setup-<profile>)
+    --base <image>        Base image (default: ubuntu:latest)
+    --dry-run             Show Dockerfile without building
+    -h, --help            Show this help message
+
+Examples:
+    $(basename "$0") minimal
+    $(basename "$0") full --tag my-dev --base debian:bookworm
+    $(basename "$0") --profile full --dry-run
+EOF
+                exit 0
+                ;;
             --profile|-p) profile="$2"; shift 2 ;;
             --tag|-t) tag="$2"; shift 2 ;;
             --base) base_image="$2"; shift 2 ;;

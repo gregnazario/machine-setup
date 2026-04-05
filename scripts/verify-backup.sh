@@ -19,7 +19,27 @@ notify_failure() {
     log_error "$message"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Verify backup integrity by checking the restic repository and
+ensuring the latest snapshot is within the configured age threshold.
+
+Options:
+    -h, --help    Show this help message
+
+Environment:
+    BACKUP_MAX_AGE_DAYS  Maximum snapshot age in days (default: 7)
+EOF
+    exit 0
+}
+
 main() {
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
+
     log_info "Verifying backup integrity..."
 
     if [[ ! -f "$CONFIG_FILE" ]]; then

@@ -149,7 +149,24 @@ EOF
     log_success "Systemd timer created and enabled"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Create a backup configuration template and set up automated backups
+using restic.
+
+Options:
+    -h, --help    Show this help message
+EOF
+    exit 0
+}
+
 main() {
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
+
     detect_platform
     log_info "Setting up backup for platform: $PLATFORM"
     

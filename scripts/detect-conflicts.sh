@@ -11,9 +11,27 @@ PROFILE=""
 CONFLICTS=0
 BROKEN=0
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Scan for Syncthing conflict files and broken dotfile symlinks.
+
+Options:
+    -p, --profile <name>  Profile to check (default: auto-detected)
+    -h, --help            Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") -p full
+EOF
+    exit 0
+}
+
 main() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help) usage ;;
             --profile|-p) PROFILE="$2"; shift 2 ;;
             *) shift ;;
         esac

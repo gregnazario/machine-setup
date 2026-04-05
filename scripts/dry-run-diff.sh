@@ -18,9 +18,29 @@ NC='\033[0m'
 
 PROFILE=""
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Show a colored diff of current state vs desired state for a profile.
+
+Options:
+    --profile <name>  Profile to diff against (default: auto-detected)
+    -h, --help        Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") --profile full
+EOF
+    exit 0
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                usage
+                ;;
             --profile)
                 PROFILE="$2"
                 shift 2

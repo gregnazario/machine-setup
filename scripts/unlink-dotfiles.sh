@@ -10,9 +10,30 @@ source "${SCRIPT_DIR}/ini-parser.sh"
 PROFILE=""
 DRY_RUN=false
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Remove managed dotfile symlinks created by link-dotfiles.sh.
+
+Options:
+    --profile <name>  Profile to use (default: auto-detected)
+    --dry-run         Show what would be removed without making changes
+    -h, --help        Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") --dry-run
+EOF
+    exit 0
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                usage
+                ;;
             --profile)
                 PROFILE="$2"
                 shift 2

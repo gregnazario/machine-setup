@@ -1,0 +1,55 @@
+.TH FLEET\-MANAGER 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+fleet\-manager.sh \- manage a fleet of machines for batch setup operations
+.SH SYNOPSIS
+.B fleet\-manager.sh
+\fISUBCOMMAND\fR [\fIARGS\fR]
+.SH DESCRIPTION
+Manages a fleet of machines registered in a local configuration file.
+Supports registering, removing, listing, and running setup on individual
+machines or the entire fleet in batch.
+.SH SUBCOMMANDS
+.TP
+.B register \fINAME\fR \fIHOST\fR [\fIPROFILE\fR]
+Register a machine with the given name, SSH host, and optional profile.
+.TP
+.B remove \fINAME\fR
+Remove a registered machine by name.
+.TP
+.B list
+List all registered machines with their host and profile.
+.TP
+.B setup \fINAME\fR
+Run machine-setup on the named machine via SSH.
+.TP
+.B setup\-all
+Run machine-setup on all registered machines.
+.SH FILES
+.TP
+.I ~/.machine\-setup/fleet.conf
+Fleet configuration file storing registered machine entries.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Error (unknown subcommand, missing machine, SSH failure).
+.SH EXAMPLES
+.TP
+Register a machine:
+.B fleet\-manager.sh register webserver user@web.example.com full
+.TP
+List all machines:
+.B fleet\-manager.sh list
+.TP
+Run setup on a single machine:
+.B fleet\-manager.sh setup webserver
+.TP
+Run setup on all machines:
+.B fleet\-manager.sh setup\-all
+.SH SEE ALSO
+.BR setup.sh (1),
+.BR remote\-setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

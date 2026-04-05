@@ -35,7 +35,24 @@ setup_docker() {
     log_warn "You need to log out and log back in for this to take effect"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Install and configure Docker, including adding the current user to the
+docker group.
+
+Options:
+    -h, --help    Show this help message
+EOF
+    exit 0
+}
+
 main() {
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
+
     setup_docker
 }
 

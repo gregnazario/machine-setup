@@ -78,11 +78,32 @@ diff_arrays() {
     fi
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") <profile-a> <profile-b>
+
+Compare two profiles side by side, showing differences in packages,
+dotfile links, and services.
+
+Options:
+    -h, --help    Show this help message
+
+Examples:
+    $(basename "$0") minimal full
+    $(basename "$0") dev-server workstation
+EOF
+    exit 0
+}
+
 main() {
     if [[ $# -lt 2 ]]; then
         echo "Usage: $0 <profile-a> <profile-b>"
         exit 1
     fi
+
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
 
     local profile_a="$1"
     local profile_b="$2"

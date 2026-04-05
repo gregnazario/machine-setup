@@ -1,4 +1,4 @@
-.TH SETUP.SH 1 "2026-04-03" "machine-setup 2.0" "Machine Setup Manual"
+.TH SETUP.SH 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
 .SH NAME
 setup.sh \- cross-platform machine configuration and syncing
 .SH SYNOPSIS
@@ -62,6 +62,37 @@ symlink integrity, and service status. Use with \fB\-\-profile\fR.
 .B \-\-status
 Show a status dashboard with platform info, installed package versions,
 dotfile link state, git-crypt status, Syncthing, backup config, and services.
+.TP
+.TP
+.BR \-\-diff\-profiles " " \fIa\fR " " \fIb\fR
+Compare two profiles, showing differences in packages and configuration.
+.TP
+.BR \-\-secrets " " \fIaction\fR
+Manage secrets. Actions: pull, push, list, status, init, set\-provider.
+.TP
+.BR \-\-remote " " \fIuser@host\fR
+Run setup on a remote machine via SSH. Passthrough options supported.
+.TP
+.BR \-\-fleet " " \fIaction\fR
+Manage a fleet of machines. Actions: register, remove, list, setup, setup\-all.
+.TP
+.BR \-\-audit " [" \fIcount\fR "]"
+Show recent audit log entries (default: 20).
+.TP
+.BR \-\-gpg " " \fIaction\fR
+Manage GPG keys. Actions: import, export, list, status.
+.TP
+.B \-\-verify\-backup
+Verify backup integrity and recency.
+.TP
+.B \-\-detect\-conflicts
+Detect dotfile conflicts and broken symlinks.
+.TP
+.BR \-\-build\-image " " \fIprofile\fR
+Build a Docker image with a profile pre-installed.
+.TP
+.BR \-\-serve " [" \-\-port " " \fIn\fR "]"
+Start web status dashboard (default port: 8080).
 .TP
 .BR \-i ", " \-\-interactive
 Launch an interactive setup wizard that guides through profile selection
@@ -155,6 +186,16 @@ Create and use a custom profile:
 .br
 .B setup.sh --profile mysetup
 .SH SEE ALSO
+.BR install-packages (1),
+.BR link-dotfiles (1),
+.BR check-health (1),
+.BR status-dashboard (1),
+.BR validate-profile (1),
+.BR dry-run-diff (1),
+.BR detect-conflicts (1),
+.BR fleet-manager (1),
+.BR remote-setup (1),
+.BR install-completions (1),
 .BR git-crypt (1),
 .BR syncthing (1),
 .BR restic (1),

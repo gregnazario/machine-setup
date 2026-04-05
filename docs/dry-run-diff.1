@@ -1,0 +1,36 @@
+.TH DRY\-RUN\-DIFF 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+dry\-run\-diff.sh \- show colored diff of current state vs desired state
+.SH SYNOPSIS
+.B dry\-run\-diff.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Compares the current machine state against the desired profile configuration
+and displays a colored diff of the differences. Shows which packages would
+be installed or removed, which dotfile symlinks would be created or updated,
+and which services would be started. No changes are made to the system.
+.SH OPTIONS
+.TP
+.BR \-\-profile " " \fINAME\fR
+Profile to diff against.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+Success (diff displayed regardless of whether differences exist).
+.TP
+.B 1
+Error (invalid profile, unreadable configuration).
+.SH EXAMPLES
+.TP
+Show diff for the full profile:
+.B dry\-run\-diff.sh \-\-profile full
+.TP
+Show diff for a custom profile:
+.B dry\-run\-diff.sh \-\-profile mysetup
+.SH SEE ALSO
+.BR setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

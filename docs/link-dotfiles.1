@@ -1,0 +1,45 @@
+.TH LINK\-DOTFILES 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+link\-dotfiles.sh \- create symlinks for dotfiles from profile configuration
+.SH SYNOPSIS
+.B link\-dotfiles.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Creates symbolic links in \fB$HOME\fR for dotfiles defined in the active
+profile configuration. Existing files are backed up with a timestamped
+suffix before linking. Supports nested directory structures and respects
+platform-specific dotfile mappings.
+.SH OPTIONS
+.TP
+.BR \-\-profile " " \fINAME\fR
+Profile to use for dotfile selection.
+.TP
+.B \-\-dry\-run
+Show what symlinks would be created without making changes.
+.TP
+.B \-\-force
+Overwrite existing files without creating backups.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Error (missing profile, permission denied, broken source path).
+.SH EXAMPLES
+.TP
+Link dotfiles for the minimal profile:
+.B link\-dotfiles.sh \-\-profile minimal
+.TP
+Preview dotfile linking:
+.B link\-dotfiles.sh \-\-profile full \-\-dry\-run
+.TP
+Force-overwrite existing files:
+.B link\-dotfiles.sh \-\-profile full \-\-force
+.SH SEE ALSO
+.BR setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

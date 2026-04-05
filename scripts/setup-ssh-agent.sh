@@ -38,7 +38,23 @@ EOF
     log_info "Restart your shell or run: source $shell_config"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Configure SSH agent auto-start in your shell configuration file.
+
+Options:
+    -h, --help    Show this help message
+EOF
+    exit 0
+}
+
 main() {
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
+
     setup_ssh_agent
 }
 

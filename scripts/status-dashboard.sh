@@ -9,9 +9,29 @@ source "${SCRIPT_DIR}/profile-loader.sh"
 
 PROFILE=""
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Display a comprehensive setup status dashboard.
+
+Options:
+    -p, --profile <name>  Profile to display (default: auto-detected)
+    -h, --help            Show this help message
+
+Examples:
+    $(basename "$0") --profile minimal
+    $(basename "$0") -p full
+EOF
+    exit 0
+}
+
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                usage
+                ;;
             --profile|-p)
                 PROFILE="$2"
                 shift 2

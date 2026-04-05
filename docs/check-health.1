@@ -1,0 +1,38 @@
+.TH CHECK\-HEALTH 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+check\-health.sh \- verify installed packages, dotfile symlinks, and service status
+.SH SYNOPSIS
+.B check\-health.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Verifies that the current machine state matches the desired profile
+configuration. Checks that all expected packages are installed, dotfile
+symlinks are intact and point to the correct targets, and managed services
+are running.
+.PP
+Outputs a summary of passed checks, warnings, and errors.
+.SH OPTIONS
+.TP
+.BR \-\-profile " " \fINAME\fR
+Profile to check against.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+All checks passed; system is healthy.
+.TP
+.B 1
+One or more warnings or errors were found.
+.SH EXAMPLES
+.TP
+Check health for the full profile:
+.B check\-health.sh \-\-profile full
+.TP
+Check health for a custom profile:
+.B check\-health.sh \-\-profile mysetup
+.SH SEE ALSO
+.BR setup.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

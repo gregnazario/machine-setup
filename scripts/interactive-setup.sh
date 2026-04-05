@@ -52,7 +52,24 @@ prompt_choice() {
     done
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Interactive wizard that guides you through machine setup, including
+profile selection, component choices, and optional dry run.
+
+Options:
+    -h, --help    Show this help message
+EOF
+    exit 0
+}
+
 main() {
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
+
     detect_platform
 
     echo ""

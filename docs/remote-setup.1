@@ -1,0 +1,43 @@
+.TH REMOTE\-SETUP 1 "2026-04-04" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+remote\-setup.sh \- run machine-setup on remote machines via SSH
+.SH SYNOPSIS
+.B remote\-setup.sh
+\fIUSER@HOST\fR [\fIOPTIONS\fR]
+.SH DESCRIPTION
+Connects to a remote machine over SSH, copies or clones the machine-setup
+repository, and runs \fBsetup.sh\fR with the specified options. Any options
+not consumed by \fBremote\-setup.sh\fR are passed through to \fBsetup.sh\fR
+on the remote host.
+.SH OPTIONS
+.TP
+.BR \-\-profile " " \fINAME\fR
+Profile to use on the remote machine.
+.TP
+.B \-\-dry\-run
+Pass \fB\-\-dry\-run\fR to the remote \fBsetup.sh\fR invocation.
+.PP
+All other options are forwarded to \fBsetup.sh\fR on the remote host
+(e.g., \fB\-\-no\-packages\fR, \fB\-\-no\-dotfiles\fR).
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Error (SSH connection failure, remote setup failure).
+.SH EXAMPLES
+.TP
+Run full setup on a remote machine:
+.B remote\-setup.sh user@web.example.com \-\-profile full
+.TP
+Preview changes on a remote machine:
+.B remote\-setup.sh user@server.local \-\-dry\-run
+.TP
+Skip packages on the remote host:
+.B remote\-setup.sh user@host \-\-profile minimal \-\-no\-packages
+.SH SEE ALSO
+.BR setup.sh (1),
+.BR fleet\-manager.sh (1)
+.SH AUTHORS
+Machine Setup contributors.

@@ -92,7 +92,32 @@ process_versioned_packages() {
     echo "$result" | sed 's/^ //'
 }
 
+usage() {
+    cat <<EOF
+Usage: source $(basename "$0")
+
+Version pinning utility for package installation. This script is
+intended to be sourced by other scripts, not run directly.
+
+Functions:
+    parse_package_spec <spec>                    Parse "pkg=version" into components
+    process_versioned_packages <pkgs> <manager>  Apply version pins for a package manager
+
+Options:
+    -h, --help    Show this help message
+
+Examples:
+    source $(basename "$0")
+    parse_package_spec 'docker=24.0.*'
+    echo "Name: \$PKG_NAME, Version: \$PKG_VERSION"
+EOF
+    exit 0
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    case "${1:-}" in
+        -h|--help) usage ;;
+    esac
     echo "Version pin utility"
     echo "Usage: source this file, then call parse_package_spec or process_versioned_packages"
     echo ""

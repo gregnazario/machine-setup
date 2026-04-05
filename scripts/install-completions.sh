@@ -6,6 +6,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 COMPLETIONS_DIR="${REPO_DIR}/completions"
+DOCS_DIR="${REPO_DIR}/docs"
 DRY_RUN="${DRY_RUN:-false}"
 
 install_bash_completion() {
@@ -141,11 +142,79 @@ detect_and_install() {
     esac
 }
 
+install_man_pages() {
+    local target_dirs=(
+        "$HOME/.local/share/man/man1"
+    )
+
+    if [[ -n "${XDG_DATA_HOME:-}" ]]; then
+        target_dirs=("${XDG_DATA_HOME}/man/man1" "${target_dirs[@]}")
+    fi
+
+    local target_dir=""
+    for dir in "${target_dirs[@]}"; do
+        if [[ -d "$dir" ]]; then
+            target_dir="$dir"
+            break
+        fi
+    done
+
+    if [[ -z "$target_dir" ]]; then
+        target_dir="${target_dirs[0]}"
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "Would install man pages to: $target_dir/"
+        for manfile in "${DOCS_DIR}"/*.1; do
+            [[ -f "$manfile" ]] && echo "  $(basename "$manfile")"
+        done
+        return
+    fi
+
+    mkdir -p "$target_dir"
+
+    local count=0
+    for manfile in "${DOCS_DIR}"/*.1; do
+        [[ -f "$manfile" ]] || continue
+        ln -sf "$manfile" "$target_dir/$(basename "$manfile")"
+        ((count++))
+    done
+
+    log_success "Installed $count man pages to: $target_dir/"
+    log_info "Try: man setup.sh"
+}
+
 install_all() {
     log_info "Installing completions for all detected shells..."
     command -v bash &>/dev/null && install_bash_completion
     command -v zsh &>/dev/null && install_zsh_completion
     command -v fish &>/dev/null && install_fish_completion
+    install_man_pages
+}
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Install shell completions and man pages for machine-setup. Detects the
+current shell by default, or install for specific shells.
+
+Options:
+    --all           Install completions for all shells and man pages
+    --bash          Install bash completions
+    --zsh           Install zsh completions
+    --fish          Install fish completions
+    --man-pages     Install man pages to ~/.local/share/man/man1/
+    --dry-run       Show what would be installed without making changes
+    -h, --help      Show this help message
+
+Examples:
+    $(basename "$0")                  # Auto-detect shell
+    $(basename "$0") --all            # All shells + man pages
+    $(basename "$0") --zsh --dry-run  # Preview zsh installation
+    $(basename "$0") --man-pages      # Install man pages only
+EOF
+    exit 0
 }
 
 main() {
@@ -154,14 +223,16 @@ main() {
     # Parse all flags first so --dry-run is order-independent
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help) usage ;;
             --all) all=true; shift ;;
             --dry-run) DRY_RUN=true; shift ;;
             --bash) mode="bash"; shift ;;
             --zsh) mode="zsh"; shift ;;
             --fish) mode="fish"; shift ;;
+            --man-pages) mode="man"; shift ;;
             *)
                 log_error "Unknown option: $1"
-                echo "Usage: $0 [--all|--bash|--zsh|--fish] [--dry-run]"
+                echo "Usage: $0 [--all|--bash|--zsh|--fish|--man-pages] [--dry-run]"
                 exit 1
                 ;;
         esac
@@ -172,6 +243,7 @@ main() {
         bash) install_bash_completion ;;
         zsh) install_zsh_completion ;;
         fish) install_fish_completion ;;
+        man) install_man_pages ;;
         *)
             if [[ "$all" == true ]]; then
                 install_all
