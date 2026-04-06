@@ -136,6 +136,8 @@ Existing files are backed up with timestamps before linking. Symlinks can be rem
 | `packages/common.conf` | Universal package definitions (INI format) |
 | `packages/platforms/*.conf` | Platform-specific packages (18 platform files) |
 | `profiles/*.conf` | Profile definitions (minimal, full, selfhosted) |
+| `profiles/hermes/base.conf` | Hermes AI agent profile (extends minimal) |
+| `profiles/zeroclaw/base.conf` | Zeroclaw AI agent profile (extends minimal) |
 | `backup/restic-config.conf` | Backup configuration (git-crypt encrypted) |
 | `dotfiles/.gitattributes` | git-crypt encryption rules |
 | `flake.nix` | Nix flake for dev shells |
@@ -161,6 +163,8 @@ Existing files are backed up with timestamps before linking. Symlinks can be rem
 | `scripts/setup-ssh-agent.sh` | Configure SSH agent |
 | `scripts/setup-docker.sh` | Add user to docker group |
 | `scripts/setup-selfhosted.sh` | Self-hosted server setup (Docker Compose stack) |
+| `scripts/setup-hermes.sh` | Hermes AI agent: platform gate, install, backend/gateway selection, native wizard delegation |
+| `scripts/setup-zeroclaw.sh` | Zeroclaw AI agent: platform gate, install, backend/gateway selection, native wizard delegation |
 | `scripts/backup-selfhosted.sh` | Backup for self-hosted services |
 
 ### CLI Commands
@@ -216,6 +220,30 @@ The main `setup.sh` supports the following flags:
 ### Selfhosted Profile
 - **Target**: Self-hosted servers running Docker Compose stacks
 - **Setup**: Docker Compose with monitoring, reverse proxy, etc.
+
+### AI Agent Profiles
+
+Nested sub-profiles for on-machine AI agents. Each uses a dedicated setup script
+with a "hybrid wizard" pattern: our script handles high-level choices (backend,
+gateways), then delegates to the tool's native wizard for details (API keys, etc.).
+
+#### Hermes (`profiles/hermes/base.conf`)
+- **Tool**: Hermes by Nous Research (https://hermes-agent.nousresearch.com/)
+- **Install**: curl-based (`scripts/setup-hermes.sh`)
+- **Backends**: Nous Portal (OAuth), OpenRouter (API key), custom OpenAI-compatible endpoint
+- **Gateways**: Telegram, Discord, Slack, WhatsApp, Signal, Email
+- **Platforms**: Linux, macOS, WSL2 (not Windows)
+- **Config dir**: `~/.config/hermes/`
+- **Native CLI**: `hermes setup`, `hermes gateway setup`, `hermes update`
+
+#### Zeroclaw (`profiles/zeroclaw/base.conf`)
+- **Tool**: Zeroclaw by Zeroclaw Labs (https://www.zeroclawlabs.ai/)
+- **Install**: curl-based (`scripts/setup-zeroclaw.sh`)
+- **Backends**: Claude (Anthropic), OpenAI, local models
+- **Gateways**: Telegram, Discord, WhatsApp, Slack
+- **Platforms**: Linux, macOS, Windows, WSL2
+- **Config dir**: `~/.config/zeroclaw/`
+- **100% local processing** -- no cloud requirement
 
 ### Profile Structure (INI format)
 
@@ -489,9 +517,6 @@ Potential areas for improvement:
 - Integration with password managers (1Password, Bitwarden)
 - Plugin system (`custom/` directory for user extensions)
 - Version pinning (`package=version` syntax in INI configs)
-- Shell completions for setup.sh flags
-- Interactive mode for guided setup
-- Status dashboard for multi-machine overview
 
 ## Getting Help
 
@@ -529,5 +554,5 @@ For questions about this repository:
 
 ---
 
-**Last Updated**: 2026-04-03
+**Last Updated**: 2026-04-05
 **Version**: 2.0.0
