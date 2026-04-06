@@ -1,0 +1,49 @@
+.TH SETUP\-HERMES 1 "2026-04-05" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+setup\-hermes.sh \- install and configure the Hermes AI agent
+.SH SYNOPSIS
+.B setup\-hermes.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Install and configure the Hermes AI agent by Nous Research. Handles platform
+verification, installation via curl, backend selection (Nous Portal, OpenRouter,
+or custom endpoint), and optional messaging gateway setup (Telegram, Discord,
+Slack, WhatsApp, Signal, Email).
+.PP
+After high-level configuration, delegates to the native \fBhermes setup\fR and
+\fBhermes gateway setup\fR wizards for detailed settings.
+.SH OPTIONS
+.TP
+.B \-\-dry\-run
+Show what would be done without executing.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH SUPPORTED PLATFORMS
+Linux (all supported distributions), macOS, and WSL2.
+Windows is not officially supported by Hermes.
+.SH BACKENDS
+.TP
+.B Nous Portal
+OAuth-based authentication. No API key required.
+.TP
+.B OpenRouter
+Requires an OpenRouter API key.
+.TP
+.B Custom endpoint
+Any OpenAI-compatible API endpoint.
+.SH GATEWAYS
+Telegram, Discord, Slack, WhatsApp, Signal, Email.
+Gateway configuration is optional and handled by \fBhermes gateway setup\fR.
+.SH EXIT STATUS
+.TP
+.B 0
+Success, or platform not supported (skipped gracefully).
+.TP
+.B 1
+Error during installation or setup.
+.SH SEE ALSO
+.BR setup.sh (1),
+.BR setup\-zeroclaw (1)
+.SH AUTHORS
+Machine Setup contributors.
