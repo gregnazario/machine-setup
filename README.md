@@ -118,6 +118,29 @@ Then run:
 ./setup.sh --profile my-custom
 ```
 
+### AI Agent Profiles
+
+On-machine AI agents with persistent memory and messaging integrations.
+
+**Hermes** (Nous Research):
+- Backends: Nous Portal, OpenRouter, custom endpoints
+- Gateways: Telegram, Discord, Slack, WhatsApp, Signal, Email
+- Platforms: Linux, macOS, WSL2
+
+```bash
+./setup.sh --profile hermes/base
+```
+
+**Zeroclaw** (Zeroclaw Labs):
+- Backends: Claude, OpenAI, local models
+- Gateways: Telegram, Discord, WhatsApp, Slack
+- Platforms: Linux, macOS, Windows, WSL2
+- 100% local processing
+
+```bash
+./setup.sh --profile zeroclaw/base
+```
+
 ### NixOS Users
 
 NixOS users can use the Nix flake instead of `setup.sh` for packages:
