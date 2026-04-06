@@ -1,0 +1,48 @@
+.TH SETUP\-ZEROCLAW 1 "2026-04-05" "machine-setup 2.0" "Machine Setup Manual"
+.SH NAME
+setup\-zeroclaw.sh \- install and configure the Zeroclaw AI agent
+.SH SYNOPSIS
+.B setup\-zeroclaw.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Install and configure the Zeroclaw AI agent by Zeroclaw Labs. Handles platform
+verification, installation via curl, backend selection (Claude, OpenAI, or
+local models), and optional messaging gateway setup (Telegram, Discord,
+WhatsApp, Slack).
+.PP
+Zeroclaw runs 100% locally with no cloud requirement. After high-level
+configuration, delegates to the native setup wizard for detailed settings.
+.SH OPTIONS
+.TP
+.B \-\-dry\-run
+Show what would be done without executing.
+.TP
+.BR \-h ", " \-\-help
+Show the help message and exit.
+.SH SUPPORTED PLATFORMS
+Linux (all supported distributions), macOS, Windows, and WSL2.
+.SH BACKENDS
+.TP
+.B Claude
+Requires an Anthropic API key.
+.TP
+.B OpenAI
+Requires an OpenAI API key.
+.TP
+.B Local models
+Runs entirely locally with no API key.
+.SH GATEWAYS
+Telegram, Discord, WhatsApp, Slack.
+Gateway configuration is optional and handled during native setup.
+.SH EXIT STATUS
+.TP
+.B 0
+Success, or platform not supported (skipped gracefully).
+.TP
+.B 1
+Error during installation or setup.
+.SH SEE ALSO
+.BR setup.sh (1),
+.BR setup\-hermes (1)
+.SH AUTHORS
+Machine Setup contributors.
