@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installation - Machine Setup</title>
+  <meta name="description" content="How to install and set up machine-setup on any supported platform.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">machine-setup</a>
+    <button class="hamburger" aria-label="Toggle menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="install.html" class="active">Installation</a></li>
+      <li><a href="configuration.html">Configuration</a></li>
+      <li><a href="platforms.html">Platforms</a></li>
+      <li><a href="https://github.com/gregnazario/machine-setup">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Installation</h1>
+    <p>Get machine-setup running on your system in under a minute.</p>
+  </div>
+
+  <div class="content">
+
+    <h2>Prerequisites</h2>
+    <p>machine-setup is pure bash and requires only standard system tools:</p>
+    <ul>
+      <li><strong>bash</strong> (4.0+ recommended, 3.2+ works on macOS)</li>
+      <li><strong>git</strong></li>
+      <li><strong>curl</strong> (only for the one-liner install method)</li>
+    </ul>
+    <p>Most systems have these pre-installed. If not, install git and curl with your system package manager first.</p>
+
+    <h2>Quick Install (One-Liner)</h2>
+    <p>The fastest way to get started. This downloads <code>setup.sh</code> and auto-clones the repo to <code>~/.machine-setup</code>:</p>
+    <pre><code>curl -fsSL https://raw.githubusercontent.com/gregnazario/machine-setup/main/setup.sh | bash</code></pre>
+
+    <p>To specify a profile directly:</p>
+    <pre><code>curl -fsSL https://raw.githubusercontent.com/gregnazario/machine-setup/main/setup.sh | bash -s -- --profile minimal</code></pre>
+
+    <div class="callout">
+      <p><strong>What this does:</strong> Clones the repository to <code>~/.machine-setup</code>, detects your platform, installs packages, links dotfiles, and optionally sets up Syncthing and backups.</p>
+    </div>
+
+    <h2>Manual Install (Clone)</h2>
+    <p>Clone the repo and run setup yourself:</p>
+    <pre><code>git clone https://github.com/gregnazario/machine-setup.git
+cd machine-setup
+./setup.sh</code></pre>
+
+    <p>Or clone to a specific location:</p>
+    <pre><code>git clone https://github.com/gregnazario/machine-setup.git ~/my-setup
+cd ~/my-setup
+./setup.sh --profile full</code></pre>
+
+    <h2>Choosing a Profile</h2>
+    <p>Profiles control what gets installed and configured. Pick the one that matches your use case:</p>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Profile</th>
+            <th>Use Case</th>
+            <th>What's Included</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>minimal</code></td>
+            <td>Servers, Raspberry Pi, constrained systems</td>
+            <td>nushell, neovim, ripgrep, fd, fzf, git, mise, syncthing</td>
+          </tr>
+          <tr>
+            <td><code>full</code></td>
+            <td>Dev workstations</td>
+            <td>Everything in minimal + zellij, bat, eza, dust, Docker, kubectl, Python, Rust, and more</td>
+          </tr>
+          <tr>
+            <td><code>selfhosted</code></td>
+            <td>Home servers running Docker services</td>
+            <td>Minimal + Docker Compose, Tailscale, monitoring tools, backup</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>See <a href="configuration.html">Configuration</a> for community profiles (devops, creative, data-science, homelab) and creating your own.</p>
+
+    <pre><code><span class="code-comment"># List all available profiles</span>
+./setup.sh <span class="code-flag">--list-profiles</span>
+
+<span class="code-comment"># See what a profile includes</span>
+./setup.sh <span class="code-flag">--show-profile</span> full
+
+<span class="code-comment"># Dry run &mdash; see what would happen without doing it</span>
+./setup.sh <span class="code-flag">--dry-run</span> <span class="code-flag">--profile</span> full</code></pre>
+
+    <h2>Skipping Steps</h2>
+    <p>Don't need everything? Skip individual steps:</p>
+    <pre><code><span class="code-comment"># Only install packages (no dotfiles, syncthing, or backup)</span>
+./setup.sh <span class="code-flag">--profile</span> full <span class="code-flag">--no-dotfiles</span> <span class="code-flag">--no-syncthing</span> <span class="code-flag">--no-backup</span>
+
+<span class="code-comment"># Only link dotfiles</span>
+./setup.sh <span class="code-flag">--profile</span> full <span class="code-flag">--no-packages</span> <span class="code-flag">--no-syncthing</span> <span class="code-flag">--no-backup</span></code></pre>
+
+    <h2>Verify Installation</h2>
+    <p>After setup completes, verify everything is working:</p>
+    <pre><code><span class="code-comment"># Run a health check</span>
+./setup.sh <span class="code-flag">--check</span> <span class="code-flag">--profile</span> full
+
+<span class="code-comment"># View status dashboard</span>
+./setup.sh <span class="code-flag">--status</span>
+
+<span class="code-comment"># Detect any broken symlinks or conflicts</span>
+./setup.sh <span class="code-flag">--detect-conflicts</span></code></pre>
+
+    <h2>Updating</h2>
+    <p>Pull the latest changes and re-run setup:</p>
+    <pre><code>./setup.sh <span class="code-flag">--update</span></code></pre>
+    <p>This runs <code>git pull</code> and then re-runs the setup with your current profile.</p>
+
+    <h2>Uninstalling</h2>
+    <p>Remove dotfile symlinks managed by machine-setup:</p>
+    <pre><code>./setup.sh <span class="code-flag">--unlink</span> <span class="code-flag">--profile</span> full</code></pre>
+    <p>Packages installed by your system package manager are not removed automatically. Use your package manager directly if you want to remove them.</p>
+
+    <h2>Remote Setup via SSH</h2>
+    <p>Set up a remote machine without logging in:</p>
+    <pre><code>./scripts/remote-setup.sh user@host <span class="code-flag">--profile</span> minimal</code></pre>
+    <p>This copies the repo to the remote machine and runs setup over SSH.</p>
+
+    <h2>Interactive Setup</h2>
+    <p>Not sure what you need? Run the interactive wizard:</p>
+    <pre><code>./setup.sh <span class="code-flag">--interactive</span></code></pre>
+    <p>The wizard walks you through platform detection, profile selection, and optional features step by step.</p>
+
+    <h2>Platform-Specific Notes</h2>
+    <ul>
+      <li><strong>macOS:</strong> Homebrew is installed automatically if missing.</li>
+      <li><strong>Gentoo:</strong> Uses binary packages (<code>emerge --getbinpkg</code>) for faster installs.</li>
+      <li><strong>FreeBSD:</strong> Uses <code>pkg</code> with ports fallback for packages not in the repo.</li>
+      <li><strong>NixOS:</strong> Consider using <code>nix develop</code> with the included flake instead of <code>setup.sh</code> for packages.</li>
+      <li><strong>Windows 11:</strong> Uses <code>winget</code>. Run from an elevated PowerShell or Git Bash.</li>
+      <li><strong>Termux:</strong> Uses <code>pkg</code>. Some packages have different names.</li>
+    </ul>
+    <p>See <a href="platforms.html">Platforms</a> for the full breakdown.</p>
+
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="install.html">Installation</a>
+      <a href="configuration.html">Configuration</a>
+      <a href="platforms.html">Platforms</a>
+      <a href="https://github.com/gregnazario/machine-setup">GitHub</a>
+    </div>
+    <p>MIT License &middot; machine-setup</p>
+  </div>
+</footer>
+
+</body>
+</html>

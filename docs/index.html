@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Machine Setup - Cross-platform machine configuration in pure bash</title>
+  <meta name="description" content="Automate your dev environment across 18+ operating systems with profile-based packages, dotfile sync, and encrypted backups. Pure bash, zero dependencies.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">machine-setup</a>
+    <button class="hamburger" aria-label="Toggle menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="configuration.html">Configuration</a></li>
+      <li><a href="platforms.html">Platforms</a></li>
+      <li><a href="https://github.com/gregnazario/machine-setup">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero container">
+  <h1>Machine Setup</h1>
+  <p class="tagline">Cross-platform machine configuration in pure bash. Profiles, dotfiles, backups &mdash; one command.</p>
+  <div class="install-box">
+    <span class="prompt">$ </span>curl -fsSL https://raw.githubusercontent.com/gregnazario/machine-setup/main/setup.sh | bash
+  </div>
+  <div class="buttons">
+    <a href="install.html" class="btn btn-primary">Get Started</a>
+    <a href="https://github.com/gregnazario/machine-setup" class="btn btn-secondary">View on GitHub</a>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="container">
+  <h2 class="section-title">Features</h2>
+  <p class="section-subtitle">Everything you need to set up and maintain machines, with nothing you don't.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">&#127760;</span>
+      <h3>18+ Platforms</h3>
+      <p>Fedora, Ubuntu, Arch, macOS, FreeBSD, Windows, NixOS, Termux, and more. One tool handles them all with platform-aware package mapping.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">&#128221;</span>
+      <h3>Profile System</h3>
+      <p>Choose minimal, full, selfhosted, or community profiles. Create custom ones with INI-based inheritance &mdash; no YAML, no JSON, no dependencies.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">&#128196;</span>
+      <h3>Dotfile Sync</h3>
+      <p>Symlink-based dotfile management organized by profile. Real-time sync across machines via Syncthing. Encrypted secrets with git-crypt.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">&#128274;</span>
+      <h3>Encrypted Backups</h3>
+      <p>Daily automated backups with Restic to BackBlaze B2 or S3. Verification, restore, and rotation built in.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">&#128640;</span>
+      <h3>Fleet Management</h3>
+      <p>Register machines, assign profiles, and run setup across your entire fleet via SSH from a single repo.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">&#9881;</span>
+      <h3>Zero Dependencies</h3>
+      <p>Pure bash with a built-in INI parser. No Ruby, Python, Node, or Ansible required. Just curl, git, and a shell.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Start -->
+<section class="container">
+  <h2 class="section-title">Quick Start</h2>
+  <p class="section-subtitle">Up and running in three steps.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-number">1</div>
+      <h3>Install</h3>
+      <p>Clone the repo or run the one-liner to bootstrap automatically.</p>
+      <pre><code>git clone https://github.com/gregnazario/machine-setup.git
+cd machine-setup</code></pre>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <h3>Pick a Profile</h3>
+      <p>Choose what kind of setup you need.</p>
+      <pre><code><span class="code-comment"># Servers &amp; minimal environments</span>
+./setup.sh <span class="code-flag">--profile</span> minimal
+
+<span class="code-comment"># Full dev workstation</span>
+./setup.sh <span class="code-flag">--profile</span> full
+
+<span class="code-comment"># Self-hosted services</span>
+./setup.sh <span class="code-flag">--profile</span> selfhosted</code></pre>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <h3>Verify</h3>
+      <p>Check that everything was set up correctly.</p>
+      <pre><code><span class="code-comment"># Health check</span>
+./setup.sh <span class="code-flag">--check</span> <span class="code-flag">--profile</span> full
+
+<span class="code-comment"># Status dashboard</span>
+./setup.sh <span class="code-flag">--status</span></code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Platforms -->
+<section class="container">
+  <h2 class="section-title">Supported Platforms</h2>
+  <p class="section-subtitle">Tested across Linux, macOS, FreeBSD, Windows, and more.</p>
+  <div class="platform-grid">
+    <div class="platform-chip">Fedora<span class="pm">dnf</span></div>
+    <div class="platform-chip">Ubuntu<span class="pm">apt</span></div>
+    <div class="platform-chip">Debian<span class="pm">apt</span></div>
+    <div class="platform-chip">Arch Linux<span class="pm">pacman</span></div>
+    <div class="platform-chip">Gentoo<span class="pm">emerge</span></div>
+    <div class="platform-chip">Void Linux<span class="pm">xbps</span></div>
+    <div class="platform-chip">Alpine<span class="pm">apk</span></div>
+    <div class="platform-chip">OpenSUSE<span class="pm">zypper</span></div>
+    <div class="platform-chip">Rocky Linux<span class="pm">dnf</span></div>
+    <div class="platform-chip">AlmaLinux<span class="pm">dnf</span></div>
+    <div class="platform-chip">RaspberryPiOS<span class="pm">apt</span></div>
+    <div class="platform-chip">macOS<span class="pm">Homebrew</span></div>
+    <div class="platform-chip">FreeBSD<span class="pm">pkg + ports</span></div>
+    <div class="platform-chip">Windows 11<span class="pm">winget</span></div>
+    <div class="platform-chip">WSL2<span class="pm">apt</span></div>
+    <div class="platform-chip">NixOS<span class="pm">nix</span></div>
+    <div class="platform-chip">Termux<span class="pm">pkg</span></div>
+    <div class="platform-chip">ChromeOS<span class="pm">apt</span></div>
+  </div>
+  <p style="text-align:center; margin-top:1.5rem;">
+    <a href="platforms.html">View detailed platform notes &rarr;</a>
+  </p>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="install.html">Installation</a>
+      <a href="configuration.html">Configuration</a>
+      <a href="platforms.html">Platforms</a>
+      <a href="https://github.com/gregnazario/machine-setup">GitHub</a>
+    </div>
+    <p>MIT License &middot; machine-setup</p>
+  </div>
+</footer>
+
+</body>
+</html>
