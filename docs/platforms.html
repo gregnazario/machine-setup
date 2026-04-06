@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platforms - Machine Setup</title>
+  <meta name="description" content="Supported platforms, package managers, and platform-specific notes for machine-setup.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">machine-setup</a>
+    <button class="hamburger" aria-label="Toggle menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="configuration.html">Configuration</a></li>
+      <li><a href="platforms.html" class="active">Platforms</a></li>
+      <li><a href="https://github.com/gregnazario/machine-setup">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Platform Support</h1>
+    <p>18 platforms, one tool. Here's what's supported and what to know about each.</p>
+  </div>
+
+  <div class="content">
+
+    <h2 id="matrix">Support Matrix</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Package Manager</th>
+            <th>Config File</th>
+            <th>Default Profile</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Fedora</td><td>dnf</td><td><code>fedora.conf</code></td><td>full</td></tr>
+          <tr><td>Ubuntu</td><td>apt</td><td><code>ubuntu.conf</code></td><td>full</td></tr>
+          <tr><td>Debian</td><td>apt</td><td><code>debian.conf</code></td><td>full</td></tr>
+          <tr><td>Arch Linux</td><td>pacman</td><td><code>arch.conf</code></td><td>full</td></tr>
+          <tr><td>Gentoo</td><td>emerge</td><td><code>gentoo.conf</code></td><td>full</td></tr>
+          <tr><td>Void Linux</td><td>xbps</td><td><code>void.conf</code></td><td>full</td></tr>
+          <tr><td>Alpine Linux</td><td>apk</td><td><code>alpine.conf</code></td><td>full</td></tr>
+          <tr><td>OpenSUSE</td><td>zypper</td><td><code>opensuse.conf</code></td><td>full</td></tr>
+          <tr><td>Rocky Linux</td><td>dnf</td><td><code>rocky.conf</code></td><td>full</td></tr>
+          <tr><td>AlmaLinux</td><td>dnf</td><td><code>alma.conf</code></td><td>full</td></tr>
+          <tr><td>RaspberryPiOS</td><td>apt</td><td><code>raspberrypios.conf</code></td><td>minimal</td></tr>
+          <tr><td>macOS</td><td>Homebrew</td><td><code>macos.conf</code></td><td>full</td></tr>
+          <tr><td>FreeBSD</td><td>pkg + ports</td><td><code>freebsd.conf</code></td><td>full</td></tr>
+          <tr><td>Windows 11</td><td>winget</td><td><code>windows.conf</code></td><td>full</td></tr>
+          <tr><td>WSL2</td><td>apt</td><td><code>wsl.conf</code></td><td>full</td></tr>
+          <tr><td>NixOS</td><td>nix</td><td><code>nixos.conf</code></td><td>full</td></tr>
+          <tr><td>Termux (Android)</td><td>pkg</td><td><code>termux.conf</code></td><td>full</td></tr>
+          <tr><td>ChromeOS (Crostini)</td><td>apt</td><td><code>chromeos.conf</code></td><td>full</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <p><strong>Auto-detection:</strong> You don't need to specify your platform. <code>setup.sh</code> detects it automatically using <code>/etc/os-release</code>, <code>uname</code>, and platform-specific environment variables.</p>
+    </div>
+
+    <h2 id="detection">How Platform Detection Works</h2>
+    <p>The detection logic in <code>scripts/platform-detect.sh</code> checks in this order:</p>
+    <ol>
+      <li><strong>macOS</strong> &mdash; <code>uname == "Darwin"</code></li>
+      <li><strong>FreeBSD</strong> &mdash; <code>uname == "FreeBSD"</code></li>
+      <li><strong>WSL2</strong> &mdash; kernel string contains "microsoft"</li>
+      <li><strong>Windows</strong> &mdash; <code>uname -s</code> starts with MINGW, MSYS, or CYGWIN</li>
+      <li><strong>Termux</strong> &mdash; <code>ANDROID_ROOT</code> or Termux <code>PREFIX</code> set</li>
+      <li><strong>ChromeOS</strong> &mdash; <code>/dev/.cros_milestone</code> exists</li>
+      <li><strong>Linux distros</strong> &mdash; <code>ID</code> field from <code>/etc/os-release</code></li>
+    </ol>
+    <p>Ubuntu derivatives (Linux Mint, Pop!_OS) are detected as Ubuntu. Arch derivatives (Manjaro, EndeavourOS, Garuda) are detected as Arch.</p>
+
+    <h2 id="linux">Linux</h2>
+
+    <h3>Fedora</h3>
+    <p>Uses <code>dnf</code>. Straightforward &mdash; most packages are available in the default repos. EPEL-style repos may be needed for some tools on older releases.</p>
+
+    <h3>Ubuntu / Debian</h3>
+    <p>Uses <code>apt</code>. Some modern CLI tools (bat, fd-find, eza) may have different package names or require PPAs on older releases. The platform configs handle name mapping.</p>
+
+    <h3>Arch Linux</h3>
+    <p>Uses <code>pacman</code>. Excellent package coverage in official repos and the AUR. Arch derivatives (Manjaro, EndeavourOS, Garuda) are auto-detected and use the same config.</p>
+
+    <h3>Gentoo</h3>
+    <p>Uses <code>emerge</code> with binary packages (<code>--getbinpkg</code>) for faster installs. Package names use the full category/name format (e.g., <code>app-editors/neovim</code>). The platform-specific setup script configures binary package repositories.</p>
+    <div class="callout callout-warn">
+      <p><strong>Note:</strong> Gentoo installs take longer than binary distros even with binpkgs. The dry-run flag is useful to preview what will be compiled.</p>
+    </div>
+
+    <h3>Void Linux</h3>
+    <p>Uses <code>xbps-install</code>. Good package coverage. The platform setup script handles any Void-specific initialization.</p>
+
+    <h3>Alpine Linux</h3>
+    <p>Uses <code>apk</code>. Alpine's musl-based userland means some packages behave differently. The platform config maps to Alpine-specific package names where needed.</p>
+
+    <h3>OpenSUSE</h3>
+    <p>Uses <code>zypper</code>. Supports both Tumbleweed (rolling) and Leap (stable). Package names are generally consistent with Fedora.</p>
+
+    <h3>Rocky Linux / AlmaLinux</h3>
+    <p>Uses <code>dnf</code>. RHEL-compatible distros with similar repos. EPEL is typically needed for modern CLI tools. Both use the same package naming conventions as Fedora.</p>
+
+    <h3>RaspberryPiOS</h3>
+    <p>Uses <code>apt</code> (Debian-based). Defaults to the <strong>minimal</strong> profile since Raspberry Pis are often resource-constrained. ARM packages are generally available for all core tools.</p>
+
+    <h3>NixOS</h3>
+    <p>Uses <code>nix</code> for package management. machine-setup works on NixOS, but you may prefer the included Nix flake for a more declarative approach:</p>
+    <pre><code><span class="code-comment"># Minimal dev shell</span>
+nix develop
+
+<span class="code-comment"># Full dev shell</span>
+nix develop .#full</code></pre>
+
+    <h2 id="unix">macOS / FreeBSD</h2>
+
+    <h3>macOS</h3>
+    <p>Uses <strong>Homebrew</strong>. If Homebrew isn't installed, <code>setup.sh</code> installs it automatically. Supports both Intel and Apple Silicon Macs. Homebrew cask is used for GUI apps when needed.</p>
+
+    <h3>FreeBSD</h3>
+    <p>Uses <code>pkg</code> with <strong>ports fallback</strong>. If a package isn't available as a binary, the installer falls back to building from the ports tree. The platform setup script ensures the ports tree is checked out.</p>
+
+    <h2 id="windows">Windows</h2>
+
+    <h3>Windows 11</h3>
+    <p>Uses <code>winget</code> (Windows Package Manager). Run from Git Bash, MSYS2, or an elevated PowerShell. Some packages have different names in the winget repository &mdash; the platform config handles mapping.</p>
+
+    <h3>WSL2</h3>
+    <p>Uses <code>apt</code> (detected as a separate platform from native Ubuntu). WSL2 provides a full Linux environment, so most packages work identically to Ubuntu/Debian. Detection checks for "microsoft" in the kernel version string.</p>
+
+    <h2 id="mobile">Mobile / Embedded</h2>
+
+    <h3>Termux (Android)</h3>
+    <p>Uses <code>pkg</code> (Termux's package manager). Runs in a terminal emulator on Android. Some packages have Termux-specific names or aren't available. The platform config maps accordingly.</p>
+
+    <h3>ChromeOS (Crostini)</h3>
+    <p>Uses <code>apt</code> inside the Linux (Crostini) container. Detected via <code>/dev/.cros_milestone</code>. Behaves like Debian once inside the container.</p>
+
+    <h2 id="platform-configs">Platform Package Configs</h2>
+    <p>Each platform has a config file in <code>packages/platforms/</code> that maps generic package names to platform-specific ones. For example:</p>
+    <pre><code><span class="code-comment"># packages/platforms/gentoo.conf</span>
+[packages]
+neovim = app-editors/neovim
+ripgrep = sys-apps/ripgrep
+fd-find = sys-apps/fd
+
+<span class="code-comment"># packages/platforms/ubuntu.conf</span>
+[packages]
+fd-find = fd-find
+bat = bat</code></pre>
+    <p>If a package doesn't need remapping, the common name from the profile is used as-is.</p>
+
+    <h2 id="derivatives">Derivative Distros</h2>
+    <p>Several derivative distros are automatically detected and mapped to their parent:</p>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Derivative</th><th>Detected As</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Linux Mint</td><td>Ubuntu</td></tr>
+          <tr><td>Pop!_OS</td><td>Ubuntu</td></tr>
+          <tr><td>Manjaro</td><td>Arch</td></tr>
+          <tr><td>EndeavourOS</td><td>Arch</td></tr>
+          <tr><td>Garuda Linux</td><td>Arch</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="install.html">Installation</a>
+      <a href="configuration.html">Configuration</a>
+      <a href="platforms.html">Platforms</a>
+      <a href="https://github.com/gregnazario/machine-setup">GitHub</a>
+    </div>
+    <p>MIT License &middot; machine-setup</p>
+  </div>
+</footer>
+
+</body>
+</html>

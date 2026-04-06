@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuration - Machine Setup</title>
+  <meta name="description" content="Profiles, packages, dotfiles, and INI format reference for machine-setup.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">machine-setup</a>
+    <button class="hamburger" aria-label="Toggle menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="configuration.html" class="active">Configuration</a></li>
+      <li><a href="platforms.html">Platforms</a></li>
+      <li><a href="https://github.com/gregnazario/machine-setup">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Configuration</h1>
+    <p>Profiles, packages, dotfiles, and all the knobs you can turn.</p>
+  </div>
+
+  <div class="content">
+
+    <h2 id="profiles">Profiles</h2>
+    <p>Profiles are INI files in the <code>profiles/</code> directory that define what gets installed and configured. Each profile specifies packages, dotfile mappings, services, and setup scripts.</p>
+
+    <h3>Built-in Profiles</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Profile</th><th>Extends</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>minimal</code></td><td>&mdash;</td><td>Essential CLI tools: nushell, neovim, ripgrep, fd, fzf, git, mise, syncthing</td></tr>
+          <tr><td><code>full</code></td><td><code>minimal</code></td><td>Complete dev environment: adds zellij, bat, eza, Docker, kubectl, Python, Rust, and more</td></tr>
+          <tr><td><code>selfhosted</code></td><td><code>minimal</code></td><td>Docker Compose services: adds Tailscale, monitoring, backup tools</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Community Profiles</h3>
+    <p>Additional profiles contributed by the community, in <code>profiles/community/</code>:</p>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Profile</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>devops</code></td><td>DevOps and infrastructure-as-code tools</td></tr>
+          <tr><td><code>creative</code></td><td>Creative and multimedia applications</td></tr>
+          <tr><td><code>data-science</code></td><td>Data science and ML stack</td></tr>
+          <tr><td><code>homelab</code></td><td>Home lab and self-hosting services</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Listing and Inspecting Profiles</h3>
+    <pre><code><span class="code-comment"># List all available profiles</span>
+./setup.sh <span class="code-flag">--list-profiles</span>
+
+<span class="code-comment"># Show packages and details for a profile</span>
+./setup.sh <span class="code-flag">--show-profile</span> full
+
+<span class="code-comment"># Compare two profiles side by side</span>
+./setup.sh <span class="code-flag">--diff-profiles</span> minimal full
+
+<span class="code-comment"># Validate a profile's syntax and references</span>
+./setup.sh <span class="code-flag">--validate-profile</span> my-custom</code></pre>
+
+    <h2 id="ini-format">INI Format Reference</h2>
+    <p>All configuration files use INI format &mdash; no external parsers needed. The built-in parser supports sections, key-value pairs, inline comments, and multi-value keys.</p>
+
+    <pre><code><span class="code-comment"># This is a comment</span>
+<span class="code-comment">; This is also a comment</span>
+
+[section]
+key = value
+another_key = value1 value2 value3  <span class="code-comment"># inline comment</span>
+
+[section.subsection]
+nested_key = nested_value</code></pre>
+
+    <div class="callout">
+      <p><strong>Multi-value keys:</strong> Space-separated values on a single line are treated as a list (e.g., packages). You can also repeat a key on multiple lines to append values.</p>
+    </div>
+
+    <h2 id="profile-anatomy">Anatomy of a Profile</h2>
+    <p>A profile file has these sections:</p>
+
+    <pre><code><span class="code-comment"># profiles/my-custom.conf</span>
+
+[profile]
+name = my-custom
+description = My custom setup
+extends = minimal              <span class="code-comment"># inherit from another profile (or false)</span>
+
+[packages]
+shell = nushell
+editors = neovim
+cli_essential = ripgrep fd-find fzf
+extra = my-favorite-tool       <span class="code-comment"># add any tool your package manager knows</span>
+
+[dotfiles]
+source = profiles/my-custom/   <span class="code-comment"># directory within dotfiles/</span>
+
+[dotfiles.links.1]
+src = .config/myapp/           <span class="code-comment"># relative to dotfiles source</span>
+dest = ~/.config/myapp/        <span class="code-comment"># absolute target path</span>
+
+[dotfiles.links.2]
+src = .gitconfig
+dest = ~/.gitconfig
+
+[services]
+enable = sshd docker           <span class="code-comment"># services to enable on boot</span>
+
+[setup_scripts]
+run = scripts/setup-ssh-agent.sh
+run = scripts/setup-docker.sh  <span class="code-comment"># scripts to run after setup</span></code></pre>
+
+    <h3>Profile Inheritance</h3>
+    <p>The <code>extends</code> key lets a profile inherit all packages, dotfiles, and services from a parent. The child profile's values are merged on top.</p>
+    <pre><code>[profile]
+name = full
+extends = minimal  <span class="code-comment"># gets everything from minimal, then adds more</span></code></pre>
+    <p>Set <code>extends = false</code> for a standalone profile with no parent.</p>
+
+    <h2 id="creating-profiles">Creating Custom Profiles</h2>
+    <p>The quickest way to create a new profile:</p>
+    <pre><code><span class="code-comment"># Scaffold from template</span>
+./setup.sh <span class="code-flag">--create-profile</span> my-server
+
+<span class="code-comment"># Edit the generated file</span>
+$EDITOR profiles/my-server.conf
+
+<span class="code-comment"># Validate it</span>
+./setup.sh <span class="code-flag">--validate-profile</span> my-server
+
+<span class="code-comment"># Run with it</span>
+./setup.sh <span class="code-flag">--profile</span> my-server</code></pre>
+
+    <p>You can also copy an existing profile and modify it, or start from the example templates (<code>profiles/gaming.conf.example</code>, <code>profiles/server.conf.example</code>).</p>
+
+    <h2 id="packages">Package Definitions</h2>
+    <p>Packages are defined in two places:</p>
+    <ul>
+      <li><code>packages/common.conf</code> &mdash; universal package names used across all platforms</li>
+      <li><code>packages/platforms/*.conf</code> &mdash; platform-specific package name overrides</li>
+    </ul>
+    <p>When a profile lists <code>editors = neovim</code>, the installer looks up the actual package name for your detected platform. For example, <code>neovim</code> might become <code>app-editors/neovim</code> on Gentoo or stay <code>neovim</code> on Ubuntu.</p>
+
+    <h3>Adding Custom Packages</h3>
+    <p>Add packages directly to your profile's <code>[packages]</code> section or create <code>packages/custom.conf</code>:</p>
+    <pre><code><span class="code-comment"># packages/custom.conf</span>
+[packages]
+extra = my-tool another-package</code></pre>
+    <p>Then run:</p>
+    <pre><code>./setup.sh <span class="code-flag">--profile</span> full <span class="code-flag">--no-dotfiles</span></code></pre>
+
+    <h2 id="dotfiles">Dotfile Management</h2>
+    <p>Dotfiles are stored in <code>dotfiles/profiles/&lt;profile&gt;/</code> and linked to their target locations via symlinks.</p>
+
+    <pre><code>dotfiles/
+  profiles/
+    minimal/
+      .config/nushell/
+      .config/nvim/
+      .gitconfig
+      .ssh/config
+    full/
+      shell/
+      editors/
+      multiplexer/
+      cli/
+      git/
+      dev/</code></pre>
+
+    <p>Each profile defines its own link mappings in <code>[dotfiles.links.*]</code> sections. Links are created idempotently &mdash; re-running setup won't break existing symlinks.</p>
+
+    <h3>Conflict Detection</h3>
+    <pre><code><span class="code-comment"># Find broken symlinks and conflicts</span>
+./setup.sh <span class="code-flag">--detect-conflicts</span>
+
+<span class="code-comment"># Remove all managed symlinks</span>
+./setup.sh <span class="code-flag">--unlink</span> <span class="code-flag">--profile</span> full</code></pre>
+
+    <h2 id="secrets">Secrets Management</h2>
+    <p>Secrets are encrypted at rest using git-crypt. Files matching patterns in <code>dotfiles/.gitattributes</code> are automatically encrypted:</p>
+    <ul>
+      <li><code>secrets/**</code> &mdash; all files in the secrets directory</li>
+      <li><code>**/.ssh/id_*</code> &mdash; SSH private keys</li>
+      <li><code>**/*.gpg</code> &mdash; GPG keys</li>
+      <li><code>**/api-tokens/**</code> &mdash; API tokens</li>
+      <li><code>**/.env*</code> &mdash; environment files</li>
+    </ul>
+    <pre><code><span class="code-comment"># Manage secrets</span>
+./setup.sh <span class="code-flag">--secrets</span> status
+./setup.sh <span class="code-flag">--secrets</span> pull
+./setup.sh <span class="code-flag">--secrets</span> push
+
+<span class="code-comment"># GPG key management</span>
+./setup.sh <span class="code-flag">--gpg</span> import key.asc
+./setup.sh <span class="code-flag">--gpg</span> list</code></pre>
+
+    <h2 id="flags">Command Reference</h2>
+    <div class="table-wrapper">
+      <table class="flags-table">
+        <thead>
+          <tr><th>Flag</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>-p, --profile &lt;name&gt;</code></td><td>Use a specific profile (default: auto-detect)</td></tr>
+          <tr><td><code>--dry-run</code></td><td>Show what would be done without executing</td></tr>
+          <tr><td><code>--check</code></td><td>Health check of current setup</td></tr>
+          <tr><td><code>--status</code></td><td>Show status dashboard</td></tr>
+          <tr><td><code>--list-profiles</code></td><td>List available profiles</td></tr>
+          <tr><td><code>--show-profile &lt;name&gt;</code></td><td>Show profile details</td></tr>
+          <tr><td><code>--diff-profiles &lt;a&gt; &lt;b&gt;</code></td><td>Compare two profiles</td></tr>
+          <tr><td><code>--validate-profile &lt;name&gt;</code></td><td>Validate profile configuration</td></tr>
+          <tr><td><code>--create-profile &lt;name&gt;</code></td><td>Create new profile from template</td></tr>
+          <tr><td><code>--update</code></td><td>Pull latest and re-run setup</td></tr>
+          <tr><td><code>--unlink</code></td><td>Remove managed dotfile symlinks</td></tr>
+          <tr><td><code>--detect-conflicts</code></td><td>Find broken symlinks and conflicts</td></tr>
+          <tr><td><code>--no-packages</code></td><td>Skip package installation</td></tr>
+          <tr><td><code>--no-dotfiles</code></td><td>Skip dotfile linking</td></tr>
+          <tr><td><code>--no-syncthing</code></td><td>Skip Syncthing setup</td></tr>
+          <tr><td><code>--no-backup</code></td><td>Skip backup setup</td></tr>
+          <tr><td><code>--secrets &lt;action&gt;</code></td><td>Manage secrets (pull, push, list, status, init)</td></tr>
+          <tr><td><code>--gpg &lt;action&gt;</code></td><td>Manage GPG keys (import, export, list, status)</td></tr>
+          <tr><td><code>--fleet &lt;action&gt;</code></td><td>Fleet management (register, list, setup, setup-all)</td></tr>
+          <tr><td><code>--remote &lt;user@host&gt;</code></td><td>Setup a remote machine via SSH</td></tr>
+          <tr><td><code>--build-image &lt;profile&gt;</code></td><td>Build Docker image with profile</td></tr>
+          <tr><td><code>--serve [--port &lt;n&gt;]</code></td><td>Web status dashboard (default: port 8080)</td></tr>
+          <tr><td><code>--audit [count]</code></td><td>View audit log entries</td></tr>
+          <tr><td><code>--verify-backup</code></td><td>Verify backup integrity</td></tr>
+          <tr><td><code>-i, --interactive</code></td><td>Interactive setup wizard</td></tr>
+          <tr><td><code>-h, --help</code></td><td>Show help message</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="environment">Environment Variables</h2>
+    <div class="table-wrapper">
+      <table class="flags-table">
+        <thead>
+          <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>MACHINE_SETUP_REPO</code></td>
+            <td><code>https://github.com/gregnazario/machine-setup.git</code></td>
+            <td>Git repository URL for standalone mode</td>
+          </tr>
+          <tr>
+            <td><code>MACHINE_SETUP_DIR</code></td>
+            <td><code>~/.machine-setup</code></td>
+            <td>Local install directory for standalone mode</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="install.html">Installation</a>
+      <a href="configuration.html">Configuration</a>
+      <a href="platforms.html">Platforms</a>
+      <a href="https://github.com/gregnazario/machine-setup">GitHub</a>
+    </div>
+    <p>MIT License &middot; machine-setup</p>
+  </div>
+</footer>
+
+</body>
+</html>
